@@ -226,9 +226,10 @@ requested; that's the job of a policy like `opa-demo/bank.rego`.
 ## Cleanup
 
 ```bash
-# stop both Spring Boot servers
+# stop the Spring Boot servers
 pkill -f tacit-demo-bank-0.1.0.jar
 pkill -f tacit-mcp-0.1.0.jar
+pkill -f guardrails-camel-0.1.0.jar
 
 # optionally, unregister from Claude Code
 claude mcp remove tacit -s user

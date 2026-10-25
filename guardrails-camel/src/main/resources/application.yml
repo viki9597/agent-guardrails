@@ -1,0 +1,21 @@
+server:
+  port: 8095
+
+spring:
+  main:
+    banner-mode: off
+
+camel:
+  springboot:
+    name: guardrails
+
+guardrails:
+  claude:
+    # Model alias passed to `claude -p --model`. Both the quarantined
+    # classifier and the planner use it.
+    model: haiku
+
+logging:
+  level:
+    root: WARN
+    com.example.guardrails: INFO
