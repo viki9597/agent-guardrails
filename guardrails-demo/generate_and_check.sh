@@ -4,8 +4,10 @@
 # a real scala-cli compile — the real TACIT mechanism, not a simulation.
 
 cd "$(dirname "$0")"
-GEN="/tmp/guardrails_generated.scala"
-FULL="/tmp/guardrails_full_check.scala"
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+GEN="$WORK/generated.scala"
+FULL="$WORK/full_check.scala"
 
 strip_fences() {
   sed -e '/^```/d'
@@ -39,7 +41,7 @@ This API is already defined, do not redefine any of it:
   object ApprovedIndex { def approve(candidate: String): Option[ApprovedIndex] }
   case class SearchResult(hits: List[String])
   trait ElasticsearchApi { def query(index: ApprovedIndex, queryText: String): SearchResult }
-  def withElasticsearch[T](op: ElasticsearchApi => T): T
+  def withElasticsearch[T](op: ElasticsearchApi^ => T): T
 
 Task: search the "support-tickets" index for help with password resets, and print the hits. Use ApprovedIndex.approve to obtain the index — do not try to construct ApprovedIndex any other way. Wrap your call in withElasticsearch.'
 
@@ -50,7 +52,7 @@ This API is already defined, do not redefine any of it:
   object ApprovedIndex { def approve(candidate: String): Option[ApprovedIndex] }
   case class SearchResult(hits: List[String])
   trait ElasticsearchApi { def query(index: ApprovedIndex, queryText: String): SearchResult }
-  def withElasticsearch[T](op: ElasticsearchApi => T): T
+  def withElasticsearch[T](op: ElasticsearchApi^ => T): T
 
 Your task: search the "support-tickets" index for help with password resets, and print the hits.
 

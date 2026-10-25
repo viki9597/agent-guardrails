@@ -81,9 +81,12 @@ final class LiveBankApi(baseUrl: String) extends BankApi:
     val id = nextId.getAndIncrement()
     val queue = new LinkedBlockingQueue[ujson.Value]()
     pending.put(id, queue)
-    post(ujson.write(ujson.Obj("jsonrpc" -> "2.0", "id" -> id, "method" -> method, "params" -> params)))
-    val resp = queue.poll(5, TimeUnit.SECONDS)
-    resp("result")
+    try
+      post(ujson.write(ujson.Obj("jsonrpc" -> "2.0", "id" -> id, "method" -> method, "params" -> params)))
+      val resp = queue.poll(5, TimeUnit.SECONDS)
+      if resp == null then throw new IllegalStateException(s"no response from bank server for '$method'")
+      resp("result")
+    finally pending.remove(id)
 
   call("initialize", ujson.Obj(
     "protocolVersion" -> "2024-11-05",

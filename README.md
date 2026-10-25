@@ -206,8 +206,20 @@ claude mcp add --transport sse tacit http://localhost:8090/sse -s user
 ```
 
 A fresh `claude` session (any directory, with `-s user`) will see one tool,
-`evaluateScala`, and nothing else — no direct path to the bank server, no
-matter what the agent asks for.
+`evaluateScala`, and nothing else — no bank tool to call directly.
+
+### Limits of this demo
+
+Capture checking only tracks values typed as capabilities (`^`). JDK APIs,
+`println`, reflection and exceptions are ambient authority the checker
+doesn't see, so a pure `T -> U` passed to `Classified.map` can still print.
+`ScalaEvalService` narrows this with a denylist validator, a separate
+compile step, generic runtime errors (no stack traces back to the agent),
+timeouts, an output cap and a concurrency limit — but a denylist is never
+complete. A real deployment should also run the evaluator in an OS or
+container sandbox with no filesystem or network access beyond the bank
+host. Capture checking also says nothing about *which* customer is
+requested; that's the job of a policy like `opa-demo/bank.rego`.
 
 ---
 

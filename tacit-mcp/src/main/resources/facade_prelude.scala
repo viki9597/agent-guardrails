@@ -14,8 +14,9 @@ case class Transaction(id: String, description: String, amount: Double, date: St
 
 // Classified never gives up the raw value: map only ever returns another
 // Classified, and there is no unwrap/declassify method in this library at
-// all. Agent-submitted code has no path out, by construction — not by
-// convention.
+// all. Caveat: the pure arrow (T -> U) only excludes tracked capabilities,
+// so ambient effects like println are still possible inside map — the
+// server's validator and a process sandbox have to cover that gap.
 final class Classified[+T] private (private val value: T):
   def map[U](f: T -> U): Classified[U] = Classified.wrap(f(value))
   def preview: String = "Classified(***)"
@@ -72,9 +73,12 @@ final class LiveBankApi(baseUrl: String) extends BankApi:
     val id = nextId.getAndIncrement()
     val queue = new LinkedBlockingQueue[ujson.Value]()
     pending.put(id, queue)
-    post(ujson.write(ujson.Obj("jsonrpc" -> "2.0", "id" -> id, "method" -> method, "params" -> params)))
-    val resp = queue.poll(5, TimeUnit.SECONDS)
-    resp("result")
+    try
+      post(ujson.write(ujson.Obj("jsonrpc" -> "2.0", "id" -> id, "method" -> method, "params" -> params)))
+      val resp = queue.poll(5, TimeUnit.SECONDS)
+      if resp == null then throw new IllegalStateException(s"no response from bank server for '$method'")
+      resp("result")
+    finally pending.remove(id)
 
   call("initialize", ujson.Obj(
     "protocolVersion" -> "2024-11-05",

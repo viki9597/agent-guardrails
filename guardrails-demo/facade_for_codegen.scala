@@ -1,3 +1,6 @@
+//> using scala 3.9.0
+//> using options -experimental -language:experimental.captureChecking
+
 // The capability library the Specialist planner (an LLM) is told about.
 // Prepended to whatever Scala code it writes, then compiled for real.
 //
@@ -26,5 +29,5 @@ final class LiveElasticsearchApi extends ElasticsearchApi:
   def query(index: ApprovedIndex, queryText: String): SearchResult =
     SearchResult(List(s"[mock hit from '${index.name}'] matching: $queryText"))
 
-def withElasticsearch[T](op: ElasticsearchApi => T): T =
+def withElasticsearch[T](op: ElasticsearchApi^ => T): T =
   op(new LiveElasticsearchApi)

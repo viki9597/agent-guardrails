@@ -4,22 +4,25 @@
 // A real taint boundary: no method anywhere returns the raw value. The
 // only way out is through an explicit, centralized, auditable approval
 // path — IndexApproval below.
-final class Tainted[+T] private (private val value: T):
-  def map[U](f: T -> U): Tainted[U] = Tainted.wrap(f(value))
+object boundary:
+  final class Tainted[+T] private (private val value: T):
+    def map[U](f: T -> U): Tainted[U] = Tainted.wrap(f(value))
 
-object Tainted:
-  def wrap[T](v: T): Tainted[T] = new Tainted(v)
-  // Not Scala-private: IndexApproval is the one sanctioned caller.
-  def unwrap[T](t: Tainted[T]): T = t.value
+  object Tainted:
+    def wrap[T](v: T): Tainted[T] = new Tainted(v)
+    // Visible only inside `boundary`, so IndexApproval is the one caller.
+    private[boundary] def unwrap[T](t: Tainted[T]): T = t.value
 
-// The ONLY sanctioned path from "untrusted candidate" to "safe index
-// name" — one function, one place to audit, checked against a fixed
-// allowlist that the candidate itself has no influence over.
-object IndexApproval:
-  private val APPROVED: Set[String] = Set("support-tickets", "product-docs")
-  def approve(candidate: Tainted[String]): Option[String] =
-    val raw = Tainted.unwrap(candidate)
-    if APPROVED.contains(raw) then Some(raw) else None
+  // The ONLY sanctioned path from "untrusted candidate" to "safe index
+  // name" — one function, one place to audit, checked against a fixed
+  // allowlist that the candidate itself has no influence over.
+  object IndexApproval:
+    private val APPROVED: Set[String] = Set("support-tickets", "product-docs")
+    def approve(candidate: Tainted[String]): Option[String] =
+      val raw = Tainted.unwrap(candidate)
+      if APPROVED.contains(raw) then Some(raw) else None
+
+export boundary.{Tainted, IndexApproval}
 
 case class SearchResult(hits: List[String])
 

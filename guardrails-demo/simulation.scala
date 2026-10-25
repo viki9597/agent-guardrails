@@ -13,11 +13,19 @@ case class TrustedTask(kind: String) // decided by the system, never by user tex
 // Data crossing the quarantine boundary. No method anywhere returns a
 // raw value — the only legitimate way out is QueryTextAccess below,
 // and it's only ever used for non-sensitive free text.
-final class Tainted[+T] private (private val value: T):
-  def map[U](f: T -> U): Tainted[U] = Tainted.wrap(f(value))
-object Tainted:
-  def wrap[T](v: T): Tainted[T] = new Tainted(v)
-  def unwrap[T](t: Tainted[T]): T = t.value
+object boundary:
+  final class Tainted[+T] private (private val value: T):
+    def map[U](f: T -> U): Tainted[U] = Tainted.wrap(f(value))
+  object Tainted:
+    def wrap[T](v: T): Tainted[T] = new Tainted(v)
+    private[boundary] def unwrap[T](t: Tainted[T]): T = t.value
+
+  // The one legitimate reason to read inside a Tainted value: using it as
+  // non-sensitive free-text search content.
+  object QueryTextAccess:
+    def forSearch(t: Tainted[String]): String = Tainted.unwrap(t)
+
+export boundary.{Tainted, QueryTextAccess}
 
 case class SearchResult(hits: List[String])
 
@@ -93,11 +101,6 @@ object ProgentPolicyGate:
     else
       println(s"  [progent] index '${plan.index}' is NOT on the approved list -> denied")
       Left(s"Progent denied: index '${plan.index}' not approved")
-
-// The one legitimate reason to read inside a Tainted value: using it as
-// non-sensitive free-text search content.
-object QueryTextAccess:
-  def forSearch(t: Tainted[String]): String = Tainted.unwrap(t)
 
 object Orchestrator:
   val GRANTED_CAPABILITIES: Set[String] = Set("ElasticsearchApi")
