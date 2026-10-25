@@ -24,6 +24,8 @@
   header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
   nav { display: flex; gap: 8px; margin-top: 12px; }
   nav button { border: 1px solid var(--line); background: transparent; color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+  nav .howto { margin-left: auto; align-self: center; color: var(--accent); font-size: 14px; text-decoration: none; }
+  nav .howto:hover { text-decoration: underline; }
   nav button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   main { max-width: 900px; margin: 0 auto; padding: 16px; }
   .hidden { display: none; }
@@ -67,6 +69,7 @@
   <nav>
     <button id="tab-chat" class="active">Chat</button>
     <button id="tab-tests">Test cases</button>
+    <a class="howto" href="/architecture.html">How it works →</a>
   </nav>
 </header>
 
