@@ -20,14 +20,19 @@ public class ChatTurn {
 
     public record ToolCall(String operation, String index) {}
 
+    /** One request found inside the message, and whether it was answered or dropped. */
+    public record Part(String text, String label, boolean answered) {}
+
     // Input. The overrides are only set by test cases, to simulate a
     // compromised classifier or planner without calling the LLM.
     public String message;
     public String taskOverride;
     public String plannerCodeOverride;
 
-    // Filled in by the route.
-    public String task;
+    // Filled in by the route. parts holds untrusted text and is only ever
+    // shown to the user or used as search content; the planner gets tasks.
+    public List<Part> parts = new ArrayList<>();
+    public List<String> tasks = new ArrayList<>();
     public String plannerCode;
     public List<ToolCall> toolCalls = new ArrayList<>();
     public List<Step> trace = new ArrayList<>();
@@ -48,10 +53,18 @@ public class ChatTurn {
         return blockedBy != null;
     }
 
-    /** One-line verdict used by the test table, e.g. "ALLOW support-tickets" or "BLOCK TACIT". */
+    public boolean anyDropped() {
+        return parts.stream().anyMatch(p -> !p.answered());
+    }
+
+    /**
+     * One-line verdict used by the test table, e.g. "ALLOW support-tickets",
+     * "ALLOW product-docs (part dropped)" or "BLOCK TACIT".
+     */
     public String outcome() {
         if (isBlocked()) return "BLOCK " + blockedBy;
-        if (toolCalls.isEmpty()) return "ALLOW (no search)";
-        return "ALLOW " + toolCalls.get(0).index();
+        String indices = toolCalls.isEmpty() ? "(no search)"
+                : String.join(" + ", toolCalls.stream().map(ToolCall::index).distinct().sorted().toList());
+        return "ALLOW " + indices + (anyDropped() ? " (part dropped)" : "");
     }
 }

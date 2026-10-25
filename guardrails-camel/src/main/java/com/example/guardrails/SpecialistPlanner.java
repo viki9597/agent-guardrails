@@ -44,8 +44,9 @@ public class SpecialistPlanner implements Processor {
             return;
         }
 
-        String prompt = API + "\nTask: " + turn.task + ". Search the catalog index for this task with userText, " +
-                "exactly once. Obtain the index with ApprovedIndex.approve and wrap the call in withElasticsearch.";
+        String prompt = API + "\nTasks: " + String.join(", ", turn.tasks) + ". For each task, search its catalog " +
+                "index with userText exactly once. Obtain each index with ApprovedIndex.approve and wrap the calls " +
+                "in withElasticsearch.";
         try {
             turn.plannerCode = stripFences(claude.ask(SYSTEM_PROMPT, prompt));
         } catch (Exception e) {

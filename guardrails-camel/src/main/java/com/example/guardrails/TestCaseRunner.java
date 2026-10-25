@@ -46,8 +46,18 @@ public class TestCaseRunner {
             turn.message = tc.message() != null ? tc.message() : "How do I reset my password?";
             turn.taskOverride = tc.task();
             turn.plannerCodeOverride = tc.plannerCode();
-            ChatTurn done = producer.requestBody("direct:chat", turn, ChatTurn.class);
-            String actual = done.outcome();
+            ChatTurn done;
+            String actual;
+            try {
+                done = producer.requestBody("direct:chat", turn, ChatTurn.class);
+                actual = done.outcome();
+            } catch (Exception e) {
+                // One broken case shouldn't hide the results of the others.
+                done = turn;
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                actual = "ERROR " + cause.getClass().getSimpleName();
+                done.trace.add(new ChatTurn.Step("Runner", "BLOCK", "case threw: " + cause.getMessage()));
+            }
             results.add(new Result(i + 1, tc.name(), tc.expect(), actual, actual.equals(tc.expect()), tc.why(), done));
         }
         return results;

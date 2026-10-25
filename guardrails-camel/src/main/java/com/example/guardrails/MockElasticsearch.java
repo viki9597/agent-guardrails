@@ -36,18 +36,31 @@ public class MockElasticsearch implements Processor {
     public void process(Exchange exchange) {
         ChatTurn turn = exchange.getMessage().getBody(ChatTurn.class);
 
-        if (turn.toolCalls.isEmpty()) {
-            turn.answer = "I didn't search anything for that request.";
-            turn.pass(ChatTurn.ELASTICSEARCH, "no calls to run");
-            return;
-        }
         StringBuilder answer = new StringBuilder();
+        if (turn.toolCalls.isEmpty()) {
+            answer.append("I didn't search anything for that request.\n");
+            turn.pass(ChatTurn.ELASTICSEARCH, "no calls to run");
+        }
         for (ChatTurn.ToolCall call : turn.toolCalls) {
-            List<String> hits = search(call.index(), turn.message);
+            List<String> hits = search(call.index(), searchTextFor(turn, call.index()));
             hits.forEach(h -> answer.append(h).append("\n"));
             turn.pass(ChatTurn.ELASTICSEARCH, "searched '" + call.index() + "': " + hits.size() + " hit(s)");
         }
+        List<String> dropped = turn.parts.stream().filter(p -> !p.answered()).map(ChatTurn.Part::text).toList();
+        if (!dropped.isEmpty()) {
+            answer.append("\nI can't help with: ").append(String.join("; ", dropped));
+        }
         turn.answer = answer.toString().strip();
+    }
+
+    // Each index is searched with the answered parts that belong to its task,
+    // so dropped parts never become search content either.
+    private static String searchTextFor(ChatTurn turn, String index) {
+        String text = turn.parts.stream()
+                .filter(p -> p.answered() && index.equals(Catalog.INDEX_FOR_TASK.get(p.label())))
+                .map(ChatTurn.Part::text)
+                .collect(Collectors.joining(" "));
+        return text.isEmpty() ? turn.message : text;
     }
 
     // Ranks documents by how many longer words they share with the query.
