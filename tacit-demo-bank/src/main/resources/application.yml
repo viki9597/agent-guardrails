@@ -1,0 +1,19 @@
+server:
+  port: 8081
+
+spring:
+  main:
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        name: acme-bank-mcp
+        version: 0.1.0
+        type: SYNC
+        instructions: "Mock Acme Bank tools: look up a customer's masked account summary, and list recent transactions."
+
+logging:
+  level:
+    root: WARN
+    org.springframework.ai.mcp: INFO
+    com.example.tacitdemo: INFO

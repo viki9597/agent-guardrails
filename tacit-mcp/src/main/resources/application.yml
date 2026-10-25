@@ -1,0 +1,19 @@
+server:
+  port: 8090
+
+spring:
+  main:
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        name: tacit
+        version: 0.1.0
+        type: SYNC
+        instructions: "TACIT: the only tool is evaluateScala. Express every action as Scala 3 code against the BankApi capability library — there is no other way to reach the bank server or anything else."
+
+logging:
+  level:
+    root: WARN
+    org.springframework.ai.mcp: INFO
+    com.example.tacitmcp: INFO

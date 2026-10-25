@@ -1,0 +1,840 @@
+<title>Guarding Agents with TACIT</title>
+
+<style>
+  :root {
+    --paper: #edf1f4;
+    --surface: #ffffff;
+    --ink: #16222c;
+    --muted: #5b7489;
+    --line: #2b5b82;
+    --line-soft: #9fb9cc;
+    --warn: #c85a32;
+    --warn-soft: #c85a3222;
+    --safe: #2f7d56;
+    --safe-soft: #2f7d5620;
+    --rule: #c3d2dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0e1a24;
+      --surface: #132331;
+      --ink: #dde7ee;
+      --muted: #8aa4b8;
+      --line: #6fb0d6;
+      --line-soft: #3a5a70;
+      --warn: #f0875a;
+      --warn-soft: #f0875a26;
+      --safe: #5fc496;
+      --safe-soft: #5fc49624;
+      --rule: #22394a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0e1a24;
+    --surface: #132331;
+    --ink: #dde7ee;
+    --muted: #8aa4b8;
+    --line: #6fb0d6;
+    --line-soft: #3a5a70;
+    --warn: #f0875a;
+    --warn-soft: #f0875a26;
+    --safe: #5fc496;
+    --safe-soft: #5fc49624;
+    --rule: #22394a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  .eyebrow {
+    font-family: "SF Compact Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--line);
+  }
+
+  h1 {
+    font-family: "SF Compact Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(28px, 5vw, 38px);
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+    margin: 6px 0 0;
+  }
+
+  .byline { color: var(--muted); font-size: 14px; margin-top: 10px; }
+
+  h2 {
+    font-family: "SF Compact Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: 21px;
+    letter-spacing: 0.01em;
+    margin: 0 0 14px;
+  }
+
+  .section {
+    margin-top: 44px;
+    padding-top: 26px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .section-no {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  p { margin: 0 0 14px; max-width: 64ch; }
+  p:last-child { margin-bottom: 0; }
+
+  .term {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 0.92em;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0 4px;
+  }
+
+  figure {
+    margin: 22px 0 8px;
+    padding: 18px 18px 14px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption {
+    margin-top: 12px;
+    font-size: 13.5px;
+    color: var(--muted);
+    border-top: 1px dashed var(--rule);
+    padding-top: 10px;
+  }
+
+  .diagram-text { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .diagram-label {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .code-panel {
+    margin-top: 18px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 16px 18px;
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 13px;
+    overflow-x: auto;
+  }
+  .code-panel pre { margin: 0; white-space: pre; line-height: 1.55; }
+  .src-label {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .checklist { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .check-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; }
+  .check-item .mark { flex: 0 0 20px; font-weight: 700; }
+  .check-item .ci-text { flex: 1 1 auto; min-width: 0; }
+  .check-item.yes .mark { color: var(--safe); }
+  .check-item.no .mark { color: var(--warn); }
+
+  .note {
+    margin-top: 40px;
+    padding: 16px 18px;
+    border: 1px dashed var(--line-soft);
+    border-radius: 4px;
+    font-size: 14.5px;
+    color: var(--muted);
+    background: var(--surface);
+  }
+  .note strong { color: var(--ink); }
+
+  .compare-wrap { overflow-x: auto; margin-top: 18px; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 480px; }
+  table.compare th, table.compare td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  table.compare th { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  table.compare td.step { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; color: var(--muted); white-space: nowrap; }
+  table.compare caption { caption-side: top; text-align: left; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+  table.compare.good caption { color: var(--safe); }
+  table.compare.bad caption { color: var(--warn); }
+  .table-pair { display: flex; flex-direction: column; gap: 28px; margin-top: 18px; }
+
+  .tldr {
+    margin-top: 28px;
+    padding: 20px 22px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--line);
+    border-radius: 4px;
+  }
+  .tldr .section-no { margin-bottom: 4px; }
+  .tldr h2 { margin-bottom: 16px; }
+  .tldr ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .tldr li { display: flex; align-items: flex-start; gap: 12px; font-size: 14.5px; }
+  .tldr-num {
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    margin-top: 1px;
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--line);
+    border: 1.5px solid var(--line);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tldr-text { flex: 1 1 auto; min-width: 0; }
+</style>
+
+<div class="page">
+
+  <div class="eyebrow">Integration — verified locally</div>
+  <h1>Guarding Agents with TACIT</h1>
+  <div class="byline">
+    A real Spring Boot app, exposed as a real MCP server, called by a real capability-typed Scala facade — built
+    and run locally, not just sketched. Code and terminal output below are from the actual run.
+  </div>
+
+  <div class="tldr">
+    <div class="section-no">TL;DR</div>
+    <h2>The bank example, in four steps</h2>
+    <ol>
+      <li>
+        <span class="tldr-num">1</span>
+        <span class="tldr-text"><strong>The setup.</strong> One agent holds a <code class="term">BankApi</code>
+          capability. <code class="term">u-1001</code> and <code class="term">u-1002</code> are just two mock
+          customer records sitting in the database — not two different callers.</span>
+      </li>
+      <li>
+        <span class="tldr-num">2</span>
+        <span class="tldr-text"><strong>Good.</strong> The agent calls
+          <code class="term">getUserDetails("u-1001")</code> through a real MCP call to the running Spring Boot
+          server. The response comes back as <code class="term">Classified</code> — agent code only ever sees
+          <code class="term">Classified(***)</code>, proven real only via a demo-only
+          <code class="term">TrustedChannel</code>.</span>
+      </li>
+      <li>
+        <span class="tldr-num">3</span>
+        <span class="tldr-text"><strong>Bad.</strong> A "pure" risk-check function secretly also calls
+          <code class="term">getUserDetails("u-1002")</code> — a customer it was never handed. The compiler
+          compares its real body against its declared type and refuses to compile it.</span>
+      </li>
+      <li>
+        <span class="tldr-num">4</span>
+        <span class="tldr-text"><strong>Same boundary, as OPA.</strong> The identical rule, written as a Rego
+          policy, returns the correct <code class="term">true</code>/<code class="term">false</code> on both
+          cases — but only because something reports the right facts to it. TACIT reads the code directly; OPA
+          trusts whatever it's told about the code.</span>
+      </li>
+    </ol>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section">
+    <div class="section-no">01 — Before and after</div>
+    <h2>Same Java service, one new hop in front of it</h2>
+    <p>
+      The Spring Boot side is a real app: <span class="term">spring-ai-starter-mcp-server-webmvc</span>, two
+      <span class="term">@Tool</span>-annotated methods (<span class="term">getUserDetails</span>,
+      <span class="term">listRecentTransactions</span>) over mock bank data, running on
+      <span class="term">localhost:8081</span>. It doesn't change at all. What changes is who's allowed to call
+      it: instead of an agent hitting it directly, a Scala facade sits in front, and the agent only ever talks to
+      that.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 900 340" role="img" aria-label="Before: the agent calls the Spring Boot MCP server directly, with no type-level check. After: the agent only talks to TACIT, which routes through a Scala facade and a host-restricted network capability before reaching the same, unchanged Spring Boot MCP server.">
+        <defs>
+          <marker id="arrowSB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="12">
+          <!-- Row 1: BEFORE -->
+          <text x="30" y="50" class="diagram-label" font-size="10.5" fill="var(--muted)">BEFORE — DIRECT MCP ACCESS</text>
+
+          <rect x="30" y="66" width="110" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="85" y="99" text-anchor="middle" font-weight="600">Agent</text>
+
+          <polyline points="140,94 670,94" fill="none" stroke="var(--warn)" stroke-width="1.3" marker-end="url(#arrowSB)"/>
+          <text x="405" y="84" text-anchor="middle" fill="var(--warn)" font-size="10.5">calls tools directly</text>
+
+          <rect x="670" y="66" width="190" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="765" y="90" text-anchor="middle" font-weight="600" font-size="12">Spring Boot</text>
+          <text x="765" y="105" text-anchor="middle" font-weight="600" font-size="12">MCP server</text>
+
+          <text x="405" y="145" text-anchor="middle" fill="var(--warn)" font-size="11">⚠ no type-level capability check</text>
+
+          <!-- Row 2: AFTER -->
+          <text x="30" y="200" class="diagram-label" font-size="10.5" fill="var(--muted)">AFTER — BEHIND TACIT</text>
+
+          <rect x="30" y="216" width="110" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="85" y="249" text-anchor="middle" font-weight="600">Agent</text>
+
+          <polyline points="140,244 168,244" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowSB)"/>
+
+          <rect x="168" y="216" width="130" height="56" rx="3" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+          <text x="233" y="240" text-anchor="middle" font-weight="600" font-size="12">TACIT</text>
+          <text x="233" y="256" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--muted)">evaluateScala only</text>
+
+          <polyline points="298,244 326,244" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowSB)"/>
+
+          <rect x="326" y="216" width="150" height="56" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="401" y="240" text-anchor="middle" font-weight="600" font-size="12" fill="var(--safe)">Scala facade</text>
+          <text x="401" y="256" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--safe)">Classified-wrapped</text>
+
+          <polyline points="476,244 504,244" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowSB)"/>
+
+          <rect x="504" y="216" width="130" height="56" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="569" y="240" text-anchor="middle" font-weight="600" font-size="12" fill="var(--safe)">Network^</text>
+          <text x="569" y="256" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--safe)">host-restricted</text>
+
+          <polyline points="634,244 662,244" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowSB)"/>
+
+          <rect x="662" y="216" width="190" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="757" y="240" text-anchor="middle" font-weight="600" font-size="12">Spring Boot</text>
+          <text x="757" y="255" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--muted)">unchanged</text>
+
+          <text x="440" y="304" text-anchor="middle" fill="var(--safe)" font-size="11">✓ every hop here is typed and capability-checked</text>
+        </g>
+      </svg>
+      <figcaption>Same endpoint at the end of both rows. The top row reaches it in one direct call; the bottom row
+        adds three checkpoints in front of it — none of which require touching the Spring Boot app itself.</figcaption>
+    </figure>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section">
+    <div class="section-no">02 — The two scenarios at a glance</div>
+    <h2>One agent, one capability, two customer records</h2>
+    <p>
+      Worth being precise about who's doing what: there's one actor in both scripts below — the agent holding the
+      <span class="term">BankApi^</span> capability. <span class="term">u-1001</span> and <span class="term">u-1002</span>
+      are just two mock customer records sitting in the bank's database, not two different callers. The good script
+      is one legitimate lookup; the bad script is that same kind of agent code secretly reaching for a
+      <em>second</em> customer's record while it was only ever handed the first one to evaluate.
+    </p>
+
+    <div class="table-pair">
+      <div class="compare-wrap">
+        <table class="compare good">
+          <caption>✓ bank_good.scala — a legitimate lookup</caption>
+          <thead><tr><th>Step</th><th>What happens</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td class="step">1</td><td>Agent calls <code class="term">getUserDetails("u-1001")</code> through its <code class="term">BankApi^</code> capability</td><td>A real MCP call goes out to the Spring Boot server</td></tr>
+            <tr><td class="step">2</td><td>Server returns Jordan Lee's real record</td><td>Response arrives as JSON over the SSE stream</td></tr>
+            <tr><td class="step">3</td><td>Facade wraps it in <code class="term">Classified[User]</code></td><td>Agent-facing code only ever sees <code class="term">Classified(***)</code></td></tr>
+            <tr><td class="step">4</td><td>A pure <code class="term">.map</code> checks something about it (e.g. email domain)</td><td>Still <code class="term">Classified</code> — no raw value escapes</td></tr>
+            <tr><td class="step">5</td><td><code class="term">TrustedChannel.declassify</code> — demo-only, not agent-reachable — prints the real value</td><td>Proves the pipeline actually ran</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="compare-wrap">
+        <table class="compare bad">
+          <caption>✗ bank_bad.scala — a capability leak</caption>
+          <thead><tr><th>Step</th><th>What happens</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td class="step">1</td><td><code class="term">riskCheck</code> is declared <code class="term">User -> Boolean</code> — a pure check, no capability</td><td>Compiler expects it to have no side effects</td></tr>
+            <tr><td class="step">2</td><td>It's handed u-1001's record to evaluate</td><td>So far, completely legitimate</td></tr>
+            <tr><td class="step">3</td><td>Its body secretly also calls <code class="term">api.getUserDetails("u-1002")</code> — a second customer it was never asked about</td><td>A capability leak, hidden inside a "pure" function</td></tr>
+            <tr><td class="step">4</td><td>Compiler compares the function's real inferred type against what it promised</td><td>Mismatch found: it actually captures <code class="term">api</code></td></tr>
+            <tr><td class="step">5</td><td>Compilation fails, before anything runs</td><td>u-1002's record is never actually fetched</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 920 300" role="img" aria-label="Two lanes. In the good lane, the agent calls getUserDetails for u-1001, gets back a Classified record, maps it with a pure function, and only TrustedChannel can print the real value — proven safe. In the bad lane, riskCheck is declared pure but secretly calls getUserDetails for u-1002, a different customer; the compiler compares the declared and actual types, finds a mismatch, and rejects it — u-1002 is never actually contacted.">
+        <defs>
+          <marker id="arrowCompare" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="11">
+          <text x="20" y="42" class="diagram-label" font-size="10.5" fill="var(--safe)">GOOD</text>
+          <rect x="20" y="55" width="170" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="105" y="74" text-anchor="middle" font-size="11">Agent calls</text>
+          <text x="105" y="90" text-anchor="middle" class="diagram-label" font-size="9.5">getUserDetails(u-1001)</text>
+          <polyline points="190,80 208,80" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowCompare)"/>
+
+          <rect x="208" y="55" width="150" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="283" y="74" text-anchor="middle" font-size="11">Spring Boot</text>
+          <text x="283" y="90" text-anchor="middle" font-size="9.5" fill="var(--muted)">returns real record</text>
+          <polyline points="358,80 376,80" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowCompare)"/>
+
+          <rect x="376" y="55" width="130" height="50" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="441" y="84" text-anchor="middle" class="diagram-label" font-size="10.5" fill="var(--safe)">Classified[User]</text>
+          <polyline points="506,80 524,80" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowCompare)"/>
+
+          <rect x="524" y="55" width="120" height="50" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="584" y="84" text-anchor="middle" class="diagram-label" font-size="10.5" fill="var(--safe)">.map(pure fn)</text>
+          <polyline points="644,80 662,80" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowCompare)"/>
+
+          <rect x="662" y="55" width="150" height="50" rx="3" fill="none" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="5 4"/>
+          <text x="737" y="74" text-anchor="middle" font-size="10.5">TrustedChannel</text>
+          <text x="737" y="90" text-anchor="middle" font-size="9.5" fill="var(--muted)">(demo-only)</text>
+
+          <text x="737" y="124" text-anchor="middle" fill="var(--safe)" font-size="11">✓ proven — nothing agent-reachable leaked</text>
+
+          <text x="20" y="172" class="diagram-label" font-size="10.5" fill="var(--warn)">BAD</text>
+          <rect x="20" y="185" width="190" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="115" y="204" text-anchor="middle" font-size="11">riskCheck(u-1001)</text>
+          <text x="115" y="220" text-anchor="middle" font-size="9.5" fill="var(--muted)">declared pure</text>
+          <polyline points="210,210 228,210" fill="none" stroke="var(--warn)" stroke-width="1.3" marker-end="url(#arrowCompare)"/>
+
+          <rect x="228" y="185" width="190" height="50" rx="3" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.5"/>
+          <text x="323" y="204" text-anchor="middle" font-size="11" fill="var(--warn)">secretly calls</text>
+          <text x="323" y="220" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--warn)">getUserDetails(u-1002)</text>
+          <polyline points="418,210 436,210" fill="none" stroke="var(--warn)" stroke-width="1.3" marker-end="url(#arrowCompare)"/>
+
+          <rect x="436" y="185" width="190" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="531" y="204" text-anchor="middle" font-size="11">compiler compares</text>
+          <text x="531" y="220" text-anchor="middle" font-size="9.5" fill="var(--muted)">declared vs. actual type</text>
+          <polyline points="626,210 644,210" fill="none" stroke="var(--warn)" stroke-width="1.3" marker-end="url(#arrowCompare)"/>
+
+          <rect x="644" y="185" width="150" height="50" rx="3" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.5"/>
+          <text x="719" y="204" text-anchor="middle" font-weight="600" font-size="11" fill="var(--warn)">✗ rejected</text>
+          <text x="719" y="220" text-anchor="middle" font-size="9.5" fill="var(--warn)">nothing runs</text>
+
+          <text x="400" y="260" text-anchor="middle" fill="var(--muted)" font-size="11">u-1002 is never actually contacted — compilation fails first</text>
+        </g>
+      </svg>
+      <figcaption>Same shape, opposite endings. The good lane ends with a proof step added only for this demo; the
+        bad lane ends at the compiler, before any network call for u-1002 is ever made.</figcaption>
+    </figure>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section">
+    <div class="section-no">03 — The same boundary, as an OPA policy</div>
+    <h2>What "policy-based" actually looks like</h2>
+    <p>
+      Section 02's rule — a lookup is only allowed for the customer the task was actually authorized to
+      evaluate — can be written as a real Open Policy Agent rule instead of a Scala type. Installed and run
+      locally (<span class="term">brew install opa</span>), tested against the exact same two scenarios.
+    </p>
+
+    <p>
+      The first version of this policy had a real hole, worth showing rather than hiding: it read
+      <code class="term">authorized_user_id</code> straight out of <code class="term">input</code> — the same
+      JSON the caller supplies. Nothing stopped the caller from just writing whatever value made the request
+      look authorized. OPA separates two things for exactly this reason: <code class="term">input</code> is the
+      untrusted, per-request data the caller sends; <code class="term">data</code> is trusted reference
+      information loaded alongside the policy by whoever controls it — not the caller. The fix moves
+      <code class="term">authorized_user_id</code> out of <code class="term">input</code> entirely, into a
+      <code class="term">data</code> document the policy looks up itself:
+    </p>
+
+    <div class="code-panel">
+      <div class="src-label">bank.rego</div>
+<pre>package bank.authz
+import rego.v1
+
+default allow := false
+
+allow if {
+    input.tool in {"getUserDetails", "listRecentTransactions"}
+    data.sessions[input.session_id] == input.requested_user_id
+}</pre>
+    </div>
+
+    <div class="code-panel">
+      <div class="src-label">sessions.json — loaded as data, not supplied by the caller</div>
+<pre>{
+  "sessions": {
+    "sess-1001": "u-1001",
+    "sess-2002": "u-1002"
+  }
+}</pre>
+    </div>
+
+    <p style="margin-top: 10px;">
+      The caller can now only hand over a <code class="term">session_id</code> — a short-lived reference — and
+      <code class="term">requested_user_id</code>, which is legitimately the call's own business. What that
+      session is actually authorized for comes from the trusted table, not from anything the caller says:
+    </p>
+
+    <div class="code-panel">
+      <div class="src-label">$ opa eval -d bank.rego -d sessions.json -i input-good.json "data.bank.authz.allow"</div>
+<pre>session_id        : sess-1001   -&gt;  data.sessions["sess-1001"] = u-1001  (looked up, not claimed)
+requested_user_id : u-1001      (what this call is actually asking about)
+rule checked       : data.sessions[input.session_id] == input.requested_user_id</pre>
+<pre>{"tool": "getUserDetails", "session_id": "sess-1001", "requested_user_id": "u-1001"}</pre>
+<pre class="err" style="color: var(--safe); border-top-color: var(--rule);">true</pre>
+    </div>
+
+    <div class="code-panel">
+      <div class="src-label">$ opa eval -d bank.rego -d sessions.json -i input-bad.json "data.bank.authz.allow"</div>
+<pre>session_id        : sess-1001   -&gt;  data.sessions["sess-1001"] = u-1001  (looked up, not claimed)
+requested_user_id : u-1002      (what this call is actually asking about — DIFFERENT)
+rule checked       : data.sessions[input.session_id] == input.requested_user_id  -&gt;  u-1001 != u-1002</pre>
+<pre>{"tool": "getUserDetails", "session_id": "sess-1001", "requested_user_id": "u-1002"}</pre>
+<pre class="err">false</pre>
+    </div>
+
+    <p style="margin-top: 10px;">
+      And the attack the old version was open to is now a no-op — tested directly: a caller adds
+      <code class="term">"authorized_user_id": "u-1002"</code> straight into its own request, trying to simply
+      declare itself authorized.
+    </p>
+
+    <div class="code-panel">
+      <div class="src-label">$ opa eval -d bank.rego -d sessions.json -i attack.json "data.bank.authz.allow"</div>
+<pre>{"tool": "getUserDetails", "session_id": "sess-1001", "requested_user_id": "u-1002", "authorized_user_id": "u-1002"}</pre>
+<pre class="err">false</pre>
+    </div>
+    <p style="margin-top: 10px;">
+      Still <code class="term">false</code> — the policy never reads <code class="term">authorized_user_id</code>
+      from input anymore, so claiming it does nothing. The session table is the only source of truth, and the
+      caller doesn't control it.
+    </p>
+
+    <div class="compare-wrap">
+      <table class="compare">
+        <thead><tr><th>&nbsp;</th><th>OPA (Rego)</th><th>TACIT (Scala types)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Where the rule lives</strong></td><td>A separate <code class="term">.rego</code> file, deployed alongside the agent</td><td>The function's own type signature — <code class="term">User -&gt; Boolean</code></td></tr>
+          <tr><td><strong>What it checks</strong></td><td><code class="term">input.session_id</code> looked up against a trusted <code class="term">data.sessions</code> table</td><td>The actual body of the function being compiled</td></tr>
+          <tr><td><strong>When</strong></td><td>At runtime, the instant before the action fires</td><td>At compile time, before anything runs at all</td></tr>
+          <tr><td><strong>Who has to tell the truth</strong></td><td>Whatever creates the <code class="term">session_id</code> in the first place — narrower than before, but still a real trust boundary</td><td>Nobody. There's no report to falsify; the compiler reads the real code directly</td></tr>
+          <tr><td><strong>If that trust boundary has a bug, or gets skipped</strong></td><td>A forged or stale <code class="term">session_id</code> still grants real access</td><td>Not possible to skip. Every compile goes through it</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 14px;">
+      This closes the specific hole we found, but not the category of problem: the trust boundary just moved
+      from "every field on every call" to "one identifier, established once." That's a real, meaningful
+      improvement — a much smaller thing to get right and audit — but it's still something outside the policy
+      has to get right, every time, for every session. <span class="term">bank_bad.scala</span>'s leak has no
+      equivalent boundary to get right, because it was never a fact being reported in the first place; it's code
+      being read. This is the "no data provenance tracking" limitation from section 02 of the main talk brief —
+      narrowed here, not eliminated.
+    </p>
+
+    <div class="code-panel">
+      <div class="src-label">Also wired into capture-demo/run-all-examples.sh — one run covers both sides</div>
+<pre>cd opa-demo
+opa eval -d bank.rego -d sessions.json -i input-good.json "data.bank.authz.allow"   # -&gt; true
+opa eval -d bank.rego -d sessions.json -i input-bad.json "data.bank.authz.allow"    # -&gt; false</pre>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="section">
+    <div class="section-no">04 — The facade</div>
+    <h2>A real capability, backed by a real MCP client</h2>
+    <p>
+      <span class="term">BankApi^</span> is the capability — an agent can only reach the Spring Boot server through
+      it. Underneath, <span class="term">LiveBankApi</span> does a genuine MCP handshake against
+      <span class="term">localhost:8081</span>: open the SSE stream, read back the session-scoped message endpoint,
+      send <span class="term">initialize</span>, then call tools over it. Trimmed to the parts that matter:
+    </p>
+
+    <div class="code-panel">
+      <div class="src-label">scala-cli, compiled and run against the live server — real output below</div>
+<pre>case class User(id: String, name: String, email: String, ssn: String) derives ReadWriter
+case class Transaction(id: String, description: String, amount: Double, date: String) derives ReadWriter
+
+trait BankApi:
+  def getUserDetails(userId: String): Classified[User]
+  def listRecentTransactions(userId: String): Classified[List[Transaction]]
+
+final class LiveBankApi(baseUrl: String) extends BankApi:
+  // ... opens the SSE stream at $baseUrl/sse, reads the session's message
+  // endpoint, sends initialize + notifications/initialized ...
+
+  private def callTool(name: String, args: ujson.Value): String =
+    call("tools/call", ujson.Obj("name" -&gt; name, "arguments" -&gt; args))("content")(0)("text").str
+
+  def getUserDetails(userId: String): Classified[User] =
+    Classified.wrap(read[User](callTool("getUserDetails", ujson.Obj("userId" -&gt; userId))))
+
+  def listRecentTransactions(userId: String): Classified[List[Transaction]] =
+    Classified.wrap(read[List[Transaction]](callTool("listRecentTransactions", ujson.Obj("userId" -&gt; userId))))
+
+// The agent only ever gets a BankApi inside this block — it can't escape.
+def withBankApi[T](baseUrl: String)(op: BankApi^ =&gt; T): T =
+  op(new LiveBankApi(baseUrl))</pre>
+    </div>
+
+    <p style="margin-top: 10px;">Calling it against the server from section 01, live:</p>
+
+    <div class="code-panel">
+      <div class="src-label">$ scala-cli run bank_good.scala — actual terminal output</div>
+<pre>getUserDetails(u-1001)   -&gt; Classified(***)
+  pure check result      -&gt; Classified(***)
+listRecentTransactions() -&gt; Classified(***)
+  pure check result      -&gt; Classified(***)</pre>
+    </div>
+
+    <p style="margin-top: 10px;">
+      That's everything agent-facing code is allowed to see. Section 03 covers what's actually happening behind
+      <span class="term">Classified(***)</span> — and how the real values underneath get proven real, without the
+      agent ever touching them.
+    </p>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="section">
+    <div class="section-no">05 — After the Classified wrap</div>
+    <h2>Where the real value goes, and who's allowed to look</h2>
+    <p>
+      <span class="term">Classified.map</span> only ever returns another <span class="term">Classified</span> —
+      there's no method on it that hands back a raw value, so agent code has no path out. The one place a real
+      value does surface is a separate <span class="term">TrustedChannel</span>, standing in for TACIT's trusted
+      private inference model: the single channel the real architecture ever lets touch classified data directly.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 950 280" role="img" aria-label="The MCP response is parsed into a typed case class, wrapped in Classified, and transformed only through pure functions that keep returning Classified. From there, agent-facing code only ever sees a redacted preview; only a separate trusted channel can call declassify to see the real value.">
+        <defs>
+          <marker id="arrowFlow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="11">
+          <rect x="20" y="50" width="130" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="85" y="78" text-anchor="middle" font-size="11">MCP response</text>
+          <polyline points="150,73 168,73" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowFlow)"/>
+
+          <rect x="168" y="50" width="120" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="228" y="78" text-anchor="middle" class="diagram-label" font-size="10.5">read[User]</text>
+          <polyline points="288,73 306,73" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowFlow)"/>
+
+          <rect x="306" y="50" width="150" height="46" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="381" y="78" text-anchor="middle" class="diagram-label" font-size="10.5" fill="var(--safe)">Classified.wrap</text>
+          <polyline points="456,73 474,73" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowFlow)"/>
+
+          <rect x="474" y="50" width="130" height="46" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="539" y="78" text-anchor="middle" class="diagram-label" font-size="10.5" fill="var(--safe)">.map(pure fn)</text>
+          <polyline points="604,73 622,73" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowFlow)"/>
+
+          <rect x="622" y="50" width="140" height="46" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="692" y="78" text-anchor="middle" class="diagram-label" font-size="10.5" fill="var(--safe)">Classified[U]</text>
+
+          <polyline points="660,96 575,164" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrowFlow)"/>
+          <text x="600" y="128" text-anchor="middle" fill="var(--muted)" font-size="10">normal access</text>
+
+          <polyline points="720,96 815,164" fill="none" stroke="var(--line)" stroke-width="1.2" marker-end="url(#arrowFlow)"/>
+          <text x="800" y="128" text-anchor="middle" fill="var(--line)" font-size="10">sanctioned only</text>
+
+          <rect x="480" y="166" width="190" height="56" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.4"/>
+          <text x="575" y="188" text-anchor="middle" font-weight="600" font-size="11" fill="var(--safe)">agent-facing code</text>
+          <text x="575" y="206" text-anchor="middle" class="diagram-label" font-size="10" fill="var(--safe)">sees Classified(***)</text>
+
+          <rect x="700" y="166" width="230" height="56" rx="3" fill="none" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 4"/>
+          <text x="815" y="188" text-anchor="middle" font-weight="600" font-size="11">TrustedChannel.declassify</text>
+          <text x="815" y="206" text-anchor="middle" class="diagram-label" font-size="10" fill="var(--muted)">not reachable from agent code</text>
+        </g>
+      </svg>
+      <figcaption>Same object the whole way through. Agent code only has a path to the left box; the right box is
+        how this demo proves the pipeline worked — the real architecture's analogue is TACIT's trusted private
+        model, not anything the public agent ever calls.</figcaption>
+    </figure>
+
+    <div class="code-panel">
+      <div class="src-label">$ scala-cli run bank_good.scala — the same run, proof printed via TrustedChannel</div>
+<pre>--- proof the pipeline actually ran against the live server ---
+  real user record       -&gt; User(u-1001,Jordan Lee,jordan.lee@acmebank.test,521-04-9981)
+  is acme address?       -&gt; true
+  debit count            -&gt; 2</pre>
+    </div>
+    <p style="margin-top: 10px;">
+      <span class="term">debit count -&gt; 2</span> matches the mock data exactly — of u-1001's three transactions,
+      two are negative. That number only exists because a pure function computed it from inside
+      <span class="term">Classified</span>; nothing about <em>how</em> it was computed could have smuggled the SSN
+      out alongside it.
+    </p>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="section">
+    <div class="section-no">06 — Proof: the leak gets caught</div>
+    <h2>A "risk check" that secretly snoops on a different customer</h2>
+    <p>
+      <span class="term">riskCheck</span> is declared as a pure predicate over one <span class="term">User</span>
+      record — exactly the shape a real fraud-scoring function would have. This one's body quietly calls back into
+      the live <span class="term">BankApi</span> to look up a <em>different</em> customer it was never asked about:
+    </p>
+
+    <div class="code-panel">
+      <div class="src-label">$ ./run-all-examples.sh — the script's own log lines, then the real compiler output</div>
+<pre>declared as      : riskCheck(user: User) -&gt; Boolean   (pure — no capability allowed in the body)
+actually calls   : api.getUserDetails("u-1002")       (a DIFFERENT customer than the one being evaluated)
+expected result  : compiler catches the mismatch and refuses to compile — u-1002 is never contacted</pre>
+<pre>def riskCheck(api: BankApi^): User -&gt; Boolean =
+  (user: User) =&gt;
+    val snoop = api.getUserDetails("u-1002")
+    snoop.nonEmpty</pre>
+<pre class="err">error: ./bank_bad.scala:17:3
+Found:    (user: User) -&gt;{api} Boolean
+Required: User -&gt; Boolean
+
+Note that capability `api` cannot flow into capture set {}.</pre>
+    </div>
+    <p style="margin-top: 10px;">
+      Nothing about this requires knowing u-1002 is a different customer, or that the snoop is suspicious — the
+      compiler doesn't reason about intent. It just sees that the closure's real type captures <code class="term">api</code>,
+      which contradicts what <span class="term">riskCheck</span> promised to return, and refuses to compile. The
+      first three lines above aren't the compiler talking — they're logging the script itself prints before the
+      attempt, so the error underneath has context without anyone needing to open the source.
+    </p>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="section">
+    <div class="section-no">07 — TACIT as its own MCP server</div>
+    <h2>Not a script anymore — a service the agent actually connects to</h2>
+    <p>
+      Everything above runs the facade as a standalone <span class="term">scala-cli</span> script. The real-world
+      shape is different: TACIT is its own long-lived service, itself an MCP server, exposing exactly
+      <strong>one</strong> tool — <span class="term">evaluateScala</span>. The agent never sees
+      <span class="term">getUserDetails</span> as a tool at all. It only ever submits Scala code, which gets
+      wrapped around the facade and compiled fresh — capture checking on — before anything runs. This version of
+      the facade also drops the one concession the local demo made: there's no declassify path in scope at all,
+      not even for debugging.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 920 220" role="img" aria-label="The agent calls evaluateScala, the only tool TACIT exposes, running on localhost 8090. Inside, submitted code passes through a code validator, then the Scala 3 compiler with capture checking, then the BankApi facade, which is the only thing that reaches the Spring Boot bank server on localhost 8081.">
+        <defs>
+          <marker id="arrowTacitMcp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="11">
+          <rect x="20" y="87" width="120" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="80" y="115" text-anchor="middle" font-weight="600">Agent</text>
+          <polyline points="140,110 166,110" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowTacitMcp)"/>
+          <text x="153" y="98" text-anchor="middle" font-size="9" fill="var(--muted)">evaluateScala</text>
+
+          <text x="178" y="34" class="diagram-label" font-size="10.5" fill="var(--muted)">TACIT — localhost:8090, one tool</text>
+          <rect x="168" y="44" width="552" height="146" rx="4" fill="none" stroke="var(--line)" stroke-width="1.3" stroke-dasharray="6 4"/>
+
+          <rect x="190" y="87" width="130" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="255" y="108" text-anchor="middle" font-size="10.5">Code validator</text>
+          <text x="255" y="123" text-anchor="middle" font-size="9" fill="var(--muted)">blocks java.io, etc.</text>
+          <polyline points="320,110 338,110" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowTacitMcp)"/>
+
+          <rect x="338" y="87" width="160" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="418" y="108" text-anchor="middle" font-size="10.5">Compiler</text>
+          <text x="418" y="123" text-anchor="middle" font-size="9" fill="var(--muted)">capture checking on</text>
+          <polyline points="498,110 516,110" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowTacitMcp)"/>
+
+          <rect x="516" y="87" width="150" height="46" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="591" y="108" text-anchor="middle" font-size="10.5" fill="var(--safe)">BankApi facade</text>
+          <text x="591" y="123" text-anchor="middle" font-size="9" fill="var(--safe)">no declassify path</text>
+
+          <polyline points="666,110 748,110" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowTacitMcp)"/>
+
+          <rect x="748" y="87" width="150" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="823" y="108" text-anchor="middle" font-weight="600" font-size="10.5">Spring Boot</text>
+          <text x="823" y="123" text-anchor="middle" font-size="9" fill="var(--muted)">localhost:8081</text>
+        </g>
+      </svg>
+      <figcaption>Same facade, same compiler, same guarantee — just running as a service instead of a one-shot
+        script. The agent's only path to the bank server is through all three boxes inside the boundary, every
+        single call.</figcaption>
+    </figure>
+
+    <div class="code-panel">
+      <div class="src-label">$ ./verify-tacit-server.sh — 1. legitimate call, over the real MCP protocol</div>
+<pre>withBankApi { api =>
+  val u = api.getUserDetails("u-1001")
+  println(u.preview)
+}</pre>
+<pre class="err" style="color: var(--safe); border-top-color: var(--rule);">Compiling project (Scala 3.9.0, JVM (17))
+Compiled project (Scala 3.9.0, JVM (17))
+Classified(***)</pre>
+    </div>
+
+    <div class="code-panel">
+      <div class="src-label">2. capability leak attempt — rejected through the live tool call</div>
+<pre>withBankApi { api =>
+  def riskCheck(u: User): Boolean =
+    val x = api.getUserDetails("u-1002")
+    true
+  val pureFn: User -&gt; Boolean = riskCheck
+  println(pureFn(User("u-1001","x","y","z")))
+}</pre>
+<pre class="err">Found:    (u: User) -&gt;{api} Boolean
+Required: User -&gt; Boolean
+Note that capability `api` cannot flow into capture set {}.
+Compilation failed</pre>
+    </div>
+
+    <div class="code-panel">
+      <div class="src-label">3. blocked import — rejected before compilation is even attempted</div>
+<pre>import java.io.File
+println(new File("/etc/passwd").exists())</pre>
+<pre class="err">error: use of 'java.io' is not allowed (rejected by the code validator before compilation)</pre>
+    </div>
+
+    <p style="margin-top: 10px;">Connected from Claude Code directly:</p>
+
+    <div class="code-panel">
+      <div class="src-label">one-time setup, any project directory afterward</div>
+<pre>claude mcp add --transport sse tacit http://localhost:8090/sse -s user</pre>
+    </div>
+    <p style="margin-top: 10px;">
+      A fresh session sees one tool — <span class="term">evaluateScala</span> — and nothing else. No
+      <span class="term">getUserDetails</span>, no <span class="term">listRecentTransactions</span>, no direct
+      route to the bank server at all, regardless of what the agent is asked to do.
+    </p>
+  </div>
+
+  <!-- SECTION 8 -->
+  <div class="section">
+    <div class="section-no">08 — What this does and doesn't cover</div>
+    <h2>The honest boundary</h2>
+    <div class="checklist">
+      <div class="check-item yes"><span class="mark">✓</span><span class="ci-text">Verified above: controls exactly which Spring Boot tools the agent can reach, over a real MCP handshake, to one host — nothing it wasn't explicitly granted.</span></div>
+      <div class="check-item yes"><span class="mark">✓</span><span class="ci-text">Verified above: a field like an SSN never has a compiling path out through a side effect — only through <span class="term">TrustedChannel</span>, which agent code can't call.</span></div>
+      <div class="check-item yes"><span class="mark">✓</span><span class="ci-text">Verified above, as a live service: connected a real Claude Code session to <span class="term">tacit</span> and confirmed it sees exactly one tool — no direct path to the bank server exists for it to find.</span></div>
+      <div class="check-item no"><span class="mark">✗</span><span class="ci-text">Doesn't secure the Spring Boot app's own internals — a vulnerability inside the Java service is outside TACIT's reach entirely.</span></div>
+      <div class="check-item no"><span class="mark">✗</span><span class="ci-text">Doesn't write itself — the facade, the capability boundary, and <span class="term">TrustedChannel</span> were all hand-written for this demo, the same way they'd need review in a real deployment.</span></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Companion page:</strong> this extends the worked examples in "Making AI Agents Safe With Scala" — same
+    capability-typing mechanism, applied to one concrete integration. Local artifacts: the Spring Boot app at
+    <code class="term">tacit-demo-bank/</code>, the Scala facade at <code class="term">capture-demo/bank_good.scala</code>
+    and <code class="term">bank_bad.scala</code>, the OPA policy at <code class="term">opa-demo/bank.rego</code>,
+    <code class="term">capture-demo/run-all-examples.sh</code> which runs all three together, and the live TACIT
+    MCP server itself at <code class="term">tacit-mcp/</code>.
+  </div>
+
+</div>

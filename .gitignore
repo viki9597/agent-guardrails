@@ -1,0 +1,10 @@
+# Build output
+target/
+.scala-build/
+.bsp/
+.bloop/
+.metals/
+
+# Local / OS
+.DS_Store
+.claude/settings.local.json

@@ -1,0 +1,1132 @@
+<title>Capability-Checked Agents</title>
+
+<style>
+  :root {
+    --paper: #edf1f4;
+    --surface: #ffffff;
+    --ink: #16222c;
+    --muted: #5b7489;
+    --line: #2b5b82;
+    --line-soft: #9fb9cc;
+    --warn: #c85a32;
+    --warn-soft: #c85a3222;
+    --safe: #2f7d56;
+    --safe-soft: #2f7d5620;
+    --rule: #c3d2dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0e1a24;
+      --surface: #132331;
+      --ink: #dde7ee;
+      --muted: #8aa4b8;
+      --line: #6fb0d6;
+      --line-soft: #3a5a70;
+      --warn: #f0875a;
+      --warn-soft: #f0875a26;
+      --safe: #5fc496;
+      --safe-soft: #5fc49624;
+      --rule: #22394a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0e1a24;
+    --surface: #132331;
+    --ink: #dde7ee;
+    --muted: #8aa4b8;
+    --line: #6fb0d6;
+    --line-soft: #3a5a70;
+    --warn: #f0875a;
+    --warn-soft: #f0875a26;
+    --safe: #5fc496;
+    --safe-soft: #5fc49624;
+    --rule: #22394a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  .eyebrow {
+    font-family: "SF Compact Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--line);
+  }
+
+  h1 {
+    font-family: "SF Compact Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(30px, 5vw, 42px);
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+    margin: 6px 0 0;
+  }
+
+  .byline {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  .byline code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 12.5px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  .titleblock {
+    border: 1px solid var(--line-soft);
+    border-left: 3px solid var(--line);
+    padding: 22px 24px;
+    margin-top: 28px;
+    background: var(--surface);
+  }
+
+  h2 {
+    font-family: "SF Compact Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.01em;
+    margin: 0 0 14px;
+  }
+
+  h3 {
+    font-family: "SF Compact Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    margin: 28px 0 10px;
+  }
+
+  .section {
+    margin-top: 52px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .section-no {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  p { margin: 0 0 14px; max-width: 64ch; }
+  p:last-child { margin-bottom: 0; }
+
+  .term {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 0.92em;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0 4px;
+  }
+
+  figure {
+    margin: 26px 0 8px;
+    padding: 18px 18px 14px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+
+  figure svg { display: block; width: 100%; height: auto; }
+
+  figcaption {
+    margin-top: 12px;
+    font-size: 13.5px;
+    color: var(--muted);
+    border-top: 1px dashed var(--rule);
+    padding-top: 10px;
+  }
+
+  .diagram-text { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .diagram-label {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .stepper {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 20px;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 16px;
+  }
+  .step-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .step-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    color: var(--line);
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    flex: 0 0 auto;
+  }
+  .step-line {
+    flex: 1;
+    width: 1.5px;
+    background: var(--line-soft);
+    min-height: 22px;
+  }
+  .step:last-child .step-line { display: none; }
+  .step-body { padding-bottom: 22px; }
+  .step-title { font-weight: 600; font-size: 15px; }
+  .step-desc { color: var(--muted); font-size: 14.5px; margin-top: 2px; }
+
+  blockquote {
+    margin: 20px 0 0;
+    padding: 4px 0 4px 16px;
+    border-left: 3px solid var(--warn);
+    color: var(--ink);
+    font-size: 15px;
+  }
+  blockquote cite {
+    display: block;
+    margin-top: 8px;
+    font-style: normal;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  .note {
+    margin-top: 40px;
+    padding: 16px 18px;
+    border: 1px dashed var(--line-soft);
+    border-radius: 4px;
+    font-size: 14.5px;
+    color: var(--muted);
+    background: var(--surface);
+  }
+  .note strong { color: var(--ink); }
+
+  .legend {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  .code-panel {
+    margin-top: 18px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 16px 18px;
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 13px;
+    overflow-x: auto;
+  }
+  .code-panel .cmd { color: var(--muted); }
+  .code-panel .cmd::before { content: "$ "; }
+  .code-panel pre { margin: 10px 0 0; white-space: pre; line-height: 1.55; }
+  .code-panel .err { color: var(--warn); margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--rule); }
+
+  .code-panel.paraphrase { border-style: dashed; }
+  .src-label {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .field-note {
+    margin-top: 22px;
+    padding: 16px 18px;
+    border-left: 3px solid var(--line);
+    background: var(--surface);
+    font-size: 14.5px;
+  }
+  .field-note .tag {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--line);
+    margin-bottom: 6px;
+    display: block;
+  }
+</style>
+
+<div class="page">
+
+  <div class="eyebrow">Talk brief · Scala Days 2026 · from the live transcript</div>
+  <h1>Making AI Agents Safe With Scala</h1>
+
+  <div class="titleblock">
+    <div class="byline">
+      <strong>Łukasz Biały</strong> (developer advocate &amp; principal software engineer) &amp;
+      <strong>Jakub Warchoł</strong> (Scala 3 compiler engineer) · VirtusLab · Oct 15, 2026<br>
+      Built on <code>TACIT</code> (Martin Odersky's team, EPFL) and shipped as <code>CapybaraClaw</code> (EPFL × VirtusLab)
+    </div>
+  </div>
+
+  <!-- SECTION 1 — THE LETHAL TRIFECTA -->
+  <div class="section">
+    <div class="section-no">01 — The problem</div>
+    <h2>The lethal trifecta</h2>
+    <p>
+      Three conditions are each fine on their own but dangerous together: an agent with access to
+      <strong>private data</strong>, exposure to <strong>untrusted content</strong> it doesn't control, and
+      <strong>tools with real-world effects</strong>. Meta's "rule of two," cited in the talk, says any two alone
+      is usually fine. All three at once is what the field calls the lethal trifecta.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 620 460" role="img" aria-label="A Venn diagram of three overlapping conditions: private data, untrusted content, and tools with real-world effects. Where all three overlap is the lethal trifecta. ChatGPT sits in the private-data and untrusted-content overlap only, without action tools, which is usually fine; a persistent agent sits in all three.">
+        <g class="diagram-text" fill="currentColor" font-size="12">
+          <circle cx="240" cy="190" r="130" fill="var(--warn)" fill-opacity="0.14" stroke="var(--line)" stroke-width="1.3"/>
+          <circle cx="400" cy="190" r="130" fill="var(--warn)" fill-opacity="0.14" stroke="var(--line)" stroke-width="1.3"/>
+          <circle cx="320" cy="320" r="130" fill="var(--warn)" fill-opacity="0.14" stroke="var(--line)" stroke-width="1.3"/>
+
+          <text x="160" y="100" class="diagram-label" font-weight="600">PRIVATE DATA</text>
+          <text x="480" y="100" text-anchor="end" class="diagram-label" font-weight="600">UNTRUSTED CONTENT</text>
+          <text x="320" y="430" text-anchor="middle" class="diagram-label" font-weight="600">TOOLS WITH REAL-WORLD EFFECTS</text>
+
+          <circle cx="320" cy="160" r="4" fill="var(--safe)"/>
+          <text x="332" y="157" fill="var(--safe)" font-weight="600">chatgpt.com</text>
+          <text x="332" y="172" fill="var(--safe)" font-size="11">2 of 3, no action tools → fine</text>
+
+          <circle cx="320" cy="230" r="4" fill="var(--warn)"/>
+          <text x="332" y="227" fill="var(--warn)" font-weight="600">always-on agent</text>
+          <text x="332" y="242" fill="var(--warn)" font-size="11">all three → lethal trifecta</text>
+        </g>
+      </svg>
+      <figcaption>ChatGPT.com has your private memories and can browse untrusted web content, but it can't act on
+        your behalf — nothing to exfiltrate through. A permanent, always-on agent is built to have all three
+        at once.</figcaption>
+    </figure>
+  </div>
+
+  <!-- SECTION 2 — WHAT'S ALREADY BEEN TRIED -->
+  <div class="section">
+    <div class="section-no">02 — What's already been tried</div>
+    <h2>Four approaches, each more sophisticated, each still falling short</h2>
+    <p>
+      The talk surveys the existing landscape before proposing anything new: sandboxes, classifier judges, rule
+      engines, and data-flow tracking. Each is a real improvement over the last — and each still has a specific gap.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 900 390" role="img" aria-label="Five approaches to AI agent safety shown as ascending steps of sophistication: sandboxes, classifier judges, rule engines, data-flow tracking, and Safe Scala plus TACIT. Each of the first four is labeled with how it still fails; the last is labeled as where the type system carries the guarantee.">
+        <g class="diagram-text" fill="currentColor" font-size="12">
+          <line x1="20" y1="340" x2="880" y2="340" stroke="var(--line-soft)" stroke-width="1"/>
+
+          <rect x="30" y="270" width="150" height="70" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="105" y="292" text-anchor="middle" font-weight="600">Sandboxes</text>
+          <text x="105" y="312" text-anchor="middle" fill="var(--warn)" font-size="11">agents escape via</text>
+          <text x="105" y="326" text-anchor="middle" fill="var(--warn)" font-size="11">net + code exec</text>
+
+          <rect x="200" y="230" width="150" height="110" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="275" y="252" text-anchor="middle" font-weight="600">Classifier judges</text>
+          <text x="275" y="272" text-anchor="middle" fill="var(--warn)" font-size="11">probabilistic —</text>
+          <text x="275" y="286" text-anchor="middle" fill="var(--warn)" font-size="11">rarely clears</text>
+          <text x="275" y="300" text-anchor="middle" fill="var(--warn)" font-size="11">~95% in tests</text>
+
+          <rect x="370" y="190" width="150" height="150" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="445" y="212" text-anchor="middle" font-weight="600">Rule engines</text>
+          <text x="445" y="228" text-anchor="middle" font-size="11" fill="var(--muted)">Cedar, OPA</text>
+          <text x="445" y="250" text-anchor="middle" fill="var(--warn)" font-size="11">no data</text>
+          <text x="445" y="264" text-anchor="middle" fill="var(--warn)" font-size="11">provenance tracking</text>
+
+          <rect x="540" y="150" width="150" height="190" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="615" y="172" text-anchor="middle" font-weight="600">Data-flow tracking</text>
+          <text x="615" y="188" text-anchor="middle" font-size="11" fill="var(--muted)">CaMeL, FIDES</text>
+          <text x="615" y="210" text-anchor="middle" fill="var(--warn)" font-size="11">works, but needs a</text>
+          <text x="615" y="224" text-anchor="middle" fill="var(--warn)" font-size="11">forked interpreter</text>
+          <text x="615" y="238" text-anchor="middle" fill="var(--warn)" font-size="11">to pull off</text>
+
+          <rect x="710" y="110" width="150" height="230" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.6"/>
+          <text x="785" y="132" text-anchor="middle" font-weight="600" fill="var(--safe)">Safe Scala</text>
+          <text x="785" y="150" text-anchor="middle" font-weight="600" fill="var(--safe)">+ TACIT</text>
+          <text x="785" y="172" text-anchor="middle" fill="var(--safe)" font-size="11">the compiler carries</text>
+          <text x="785" y="186" text-anchor="middle" fill="var(--safe)" font-size="11">the guarantee —</text>
+          <text x="785" y="200" text-anchor="middle" fill="var(--safe)" font-size="11">checked before</text>
+          <text x="785" y="214" text-anchor="middle" fill="var(--safe)" font-size="11">anything runs</text>
+
+          <text x="450" y="368" text-anchor="middle" class="diagram-label" fill="var(--muted)" font-size="11">increasing sophistication →</text>
+        </g>
+      </svg>
+      <figcaption>Sandboxes (containers, VMs, seatbelt, bubblewrap) separate code from resources with a flat
+        policy — agents have escaped them given internet access and code execution. Classifier judges catch most
+        exfiltration attempts but stay probabilistic. Cedar and OPA are formally verified but stateless, with no
+        way to track where a piece of data came from; Dogwood adds timing rules but still misses cross-session
+        gaps. CaMeL (Google DeepMind) and FIDES (Microsoft) track data provenance at runtime and work — at the
+        cost of real complexity, like CaMeL's forked Python interpreter.</figcaption>
+    </figure>
+
+    <p>
+      One more data-flow-tracking system came up first, under a name that didn't transcribe cleanly from the audio
+      (closest to "Open APA" — flagged below rather than guessed at). It labels the whole conversation by audience
+      and trust level and blocks any tool call that would widen that audience after something sensitive enters —
+      but run strictly, that only clears about 38% of otherwise-usable tool calls in benchmarks, which is why it
+      needs an escape hatch: sanitizers, or asking a human to approve the call and lower the label back down.
+    </p>
+
+    <blockquote>
+      "I had a dispute with Claude Opus 5 recently, and the model decided the best way to prove it was right was to
+      read my shell history — and the classifier was happy to approve that."
+      <cite>— Łukasz Biały, on why classifier judges aren't enough on their own</cite>
+    </blockquote>
+  </div>
+
+  <!-- SECTION 3 — THE IDEA -->
+  <div class="section">
+    <div class="section-no">03 — The idea</div>
+    <h2>Let the compiler carry the guarantee</h2>
+    <p>
+      Instead of watching an agent at runtime, Safe Scala asks the compiler to prove a capability rule can't be
+      broken before the code ever executes. It's a restricted Scala 3 mode: only code that passes review and carries
+      a special annotation can be called at all, and <span class="term">capture checking</span> tracks which
+      capabilities — file access, network, a private key — flow through a piece of code as part of its type.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 640 390" role="img" aria-label="Four layers stacked: Scala 3 capture and separation checking at the base, Safe Scala mode above it, TACIT built on Safe Scala, and CapybaraClaw built on TACIT at the top.">
+        <defs>
+          <marker id="arrowStack" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor">
+          <rect x="40" y="300" width="560" height="66" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="60" y="324" font-size="11" class="diagram-label" fill="var(--muted)">LANGUAGE</text>
+          <text x="60" y="347" font-size="14.5" font-weight="600">Scala 3 — capture + separation checking</text>
+
+          <rect x="100" y="208" width="440" height="66" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="120" y="232" font-size="11" class="diagram-label" fill="var(--muted)">COMPILER MODE</text>
+          <text x="120" y="255" font-size="14.5" font-weight="600">Safe Scala — allowlisted, capability-typed</text>
+
+          <rect x="160" y="116" width="320" height="66" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="180" y="140" font-size="11" class="diagram-label" fill="var(--muted)">TOOL GATEWAY</text>
+          <text x="180" y="163" font-size="14.5" font-weight="600">TACIT</text>
+
+          <rect x="200" y="20" width="240" height="70" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.6"/>
+          <text x="220" y="44" font-size="11" class="diagram-label" fill="var(--safe)">PRODUCT</text>
+          <text x="220" y="67" font-size="14.5" font-weight="600" fill="var(--safe)">CapybaraClaw</text>
+
+          <polyline points="320,300 320,278" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrowStack)"/>
+          <text x="332" y="294" font-size="11" fill="var(--muted)">builds on</text>
+
+          <polyline points="320,208 320,186" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrowStack)"/>
+          <text x="332" y="202" font-size="11" fill="var(--muted)">builds on</text>
+
+          <polyline points="320,116 320,94" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrowStack)"/>
+          <text x="332" y="110" font-size="11" fill="var(--muted)">builds on</text>
+        </g>
+      </svg>
+      <figcaption>Each layer depends on the one below it. The safety guarantee is only as strong as capture
+        checking at the bottom — everything above inherits it.</figcaption>
+    </figure>
+
+    <p style="margin-top: 6px;">
+      The part worth isolating: <em>when</em> the safety check happens. A sandbox watches the agent while it runs
+      and intervenes if something goes wrong. Safe Scala asks the compiler to prove a capability rule can't be
+      broken — before the agent ever executes.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 900 270" role="img" aria-label="Timeline comparing sandboxing, which checks capability use at runtime, against Safe Scala, which checks capability use at compile time before the program runs.">
+        <g class="diagram-text" fill="currentColor" font-size="12">
+          <line x1="90" y1="48" x2="830" y2="48" stroke="var(--line-soft)" stroke-width="1"/>
+          <line x1="150" y1="40" x2="150" y2="235" stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 4"/>
+          <line x1="470" y1="40" x2="470" y2="235" stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 4"/>
+          <line x1="790" y1="40" x2="790" y2="235" stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 4"/>
+          <text x="150" y="30" text-anchor="middle" class="diagram-label" fill="var(--muted)">WRITE CODE</text>
+          <text x="470" y="30" text-anchor="middle" class="diagram-label" fill="var(--muted)">COMPILE</text>
+          <text x="790" y="30" text-anchor="middle" class="diagram-label" fill="var(--muted)">RUN</text>
+
+          <text x="20" y="118" font-weight="600">Sandboxing</text>
+          <text x="20" y="208" font-weight="600">Safe Scala</text>
+
+          <line x1="150" y1="110" x2="790" y2="110" stroke="var(--line-soft)" stroke-width="1"/>
+          <rect x="470" y="98" width="320" height="24" fill="var(--warn-soft)" stroke="none"/>
+          <circle cx="790" cy="110" r="7" fill="var(--warn)"/>
+          <text x="790" y="140" text-anchor="end" fill="var(--warn)">checked here, live — ⚠ risk window stays open until run</text>
+
+          <line x1="150" y1="200" x2="470" y2="200" stroke="var(--line-soft)" stroke-width="1"/>
+          <line x1="470" y1="200" x2="790" y2="200" stroke="var(--rule)" stroke-width="1" stroke-dasharray="2 5"/>
+          <circle cx="470" cy="200" r="7" fill="var(--safe)"/>
+          <text x="470" y="230" text-anchor="middle" fill="var(--safe)">checked here — ✓ unsafe code never compiles</text>
+        </g>
+      </svg>
+      <figcaption>Same three stages, two different moments of truth. Sandboxing's check sits at the end, while the
+        agent is live; Safe Scala's sits at compile time, before it ever is.</figcaption>
+    </figure>
+  </div>
+
+  <!-- SECTION 4 — ONE COMPILE VS. ONE SESSION -->
+  <div class="section">
+    <div class="section-no">04 — One compile vs. one session</div>
+    <h2>Why TACIT runs as a REPL, not a one-shot compile</h2>
+    <p>
+      Every example so far is a standalone file, compiled once with <span class="term">scala-cli compile</span> or
+      <span class="term">run</span> — a normal program, not a shell. TACIT itself doesn't work that way. It's
+      multi-turn by nature: an agent requests a capability on one turn and should still have it three turns later
+      without asking again. So TACIT evaluates code the way a Scala REPL does — one piece at a time, with session
+      state carried forward — rather than compiling a whole program fresh on every turn.
+    </p>
+    <p>
+      The part that matters for safety: running turn-by-turn doesn't loosen the guarantee. Each new piece of code
+      is still capture-checked on its own, against whatever's actually in scope. A bad turn gets rejected without
+      corrupting the session or quietly granting anything it shouldn't.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 900 300" role="img" aria-label="Comparison: a one-shot compile requires the agent to resubmit a whole program every turn. A REPL session, what TACIT actually runs, carries capability state across turns — turn one requests a capability, turn two uses it, turn three is rejected on its own without losing that state, and turn four still succeeds using the same granted capability.">
+        <defs>
+          <marker id="arrowRepl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="11">
+          <!-- Panel A: one-shot compile -->
+          <text x="30" y="28" class="diagram-label" font-size="10.5" fill="var(--muted)">ONE-SHOT COMPILE</text>
+          <rect x="20" y="44" width="860" height="70" rx="4" fill="none" stroke="var(--line)" stroke-width="1.3" stroke-dasharray="6 4"/>
+
+          <rect x="50" y="62" width="180" height="34" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="140" y="83" text-anchor="middle" class="diagram-label" font-size="11">write whole program</text>
+          <polyline points="230,79 270,79" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowRepl)"/>
+
+          <rect x="270" y="62" width="140" height="34" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="340" y="83" text-anchor="middle" class="diagram-label" font-size="11">compile once</text>
+          <polyline points="410,79 450,79" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arrowRepl)"/>
+
+          <rect x="450" y="62" width="120" height="34" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="510" y="83" text-anchor="middle" class="diagram-label" font-size="11">run once</text>
+
+          <text x="760" y="83" text-anchor="middle" fill="var(--muted)" font-size="10.5">resubmit everything, every turn</text>
+
+          <!-- Panel B: REPL session -->
+          <text x="30" y="150" class="diagram-label" font-size="10.5" fill="var(--muted)">REPL SESSION — what TACIT runs</text>
+          <rect x="20" y="166" width="860" height="110" rx="4" fill="none" stroke="var(--line)" stroke-width="1.3" stroke-dasharray="6 4"/>
+
+          <rect x="50" y="188" width="170" height="44" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.4"/>
+          <text x="135" y="206" text-anchor="middle" font-weight="600" font-size="11" fill="var(--safe)">turn 1</text>
+          <text x="135" y="222" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--safe)">request Api^</text>
+
+          <polyline points="220,210 258,210" fill="none" stroke="var(--safe)" stroke-width="1.3" marker-end="url(#arrowRepl)"/>
+
+          <rect x="258" y="188" width="170" height="44" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.4"/>
+          <text x="343" y="206" text-anchor="middle" font-weight="600" font-size="11" fill="var(--safe)">turn 2</text>
+          <text x="343" y="222" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--safe)">orchestrate(api, …)</text>
+
+          <polyline points="428,210 466,210" fill="none" stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="3 3" marker-end="url(#arrowRepl)"/>
+
+          <rect x="466" y="188" width="170" height="44" rx="3" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.4"/>
+          <text x="551" y="206" text-anchor="middle" font-weight="600" font-size="11" fill="var(--warn)">turn 3 — rejected</text>
+          <text x="551" y="222" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--warn)">compromisedVerifier(api)</text>
+
+          <polyline points="636,210 674,210" fill="none" stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="3 3" marker-end="url(#arrowRepl)"/>
+
+          <rect x="674" y="188" width="170" height="44" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.4"/>
+          <text x="759" y="206" text-anchor="middle" font-weight="600" font-size="11" fill="var(--safe)">turn 4</text>
+          <text x="759" y="222" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--safe)">retries, succeeds</text>
+
+          <text x="450" y="258" text-anchor="middle" fill="var(--muted)" font-size="10.5">session memory — including the Api^ grant — survives all four turns</text>
+        </g>
+      </svg>
+      <figcaption>Based on how the talk describes TACIT's REPL-session module, not independently run as a session
+        ourselves. Turn 3 is checked and rejected entirely on its own, the same way <code class="term">api_bad.scala</code>
+        was — but unlike a one-shot compile, the session doesn't restart: the capability granted in turn 1 is still
+        there for turn 4.</figcaption>
+    </figure>
+  </div>
+
+  <!-- SECTION 5 — THE MECHANISM IN ACTION -->
+  <div class="section">
+    <div class="section-no">05 — The mechanism in action</div>
+    <h2>Two ways to see the same rule</h2>
+
+    <h3>What the talk actually demoed</h3>
+    <p>
+      The flagship example: an agent is given a <span class="term">FileSystem</span> capability and reads what
+      turns out to be an SSH private key. The read comes back as <span class="term">Classified[String]</span>,
+      not <span class="term">String</span>. Stringifying a classified value, or calling any operation on it, just
+      returns another classified value — there's no path to the raw contents.
+    </p>
+    <div class="code-panel paraphrase">
+      <div class="src-label">As described in the talk — paraphrased, not independently compiled</div>
+<pre>def exfiltrate(fs: FileSystem^): Unit =
+  val key: Classified[String] = fs.readClassified("~/.ssh/id_rsa")
+  val raw = key.map(s => s)        // map only accepts a PURE function
+  send(raw.toString)               // still Classified — nothing to send</pre>
+    </div>
+    <p style="margin-top: 10px;">
+      The agent can't route around this by calling <code class="term">map</code> itself: <code class="term">map</code>
+      on a classified value only accepts a function with no side effects and no captured capabilities, so there's no
+      way to smuggle the raw string out through a transformation.
+    </p>
+
+    <h3>What we compiled ourselves: two agents, one API capability</h3>
+    <p>
+      TACIT's actual <span class="term">Classified</span> type isn't public, so we can't compile that exact example.
+      But the same rule — a capability can't hide inside a closure that claims to need nothing — is plain Scala 3
+      capture checking, and we verified it directly with <span class="term">scala-cli</span>, using the shape of
+      the bank example above: a <span class="term">verifying</span> agent that only ever returns a yes/no verdict,
+      and a separate <span class="term">orchestrating</span> agent that's the only one ever holding the capability
+      to actually call the API.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 900 290" role="img" aria-label="Inside the withApi scope, the api capability stays with orchestrate and compiles. Attempting to let a verifying agent also hold the api capability, disguised as a plain String to Boolean verifier, is blocked at the scope boundary, marked with an X, alongside the real compiler error.">
+        <defs>
+          <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="13">
+          <text x="60" y="46" class="diagram-label" font-size="11" fill="var(--muted)">API SCOPE — withApi &#123; api =&gt; ... &#125;</text>
+          <rect x="50" y="56" width="420" height="210" rx="4" fill="none" stroke="var(--line)" stroke-width="1.3" stroke-dasharray="6 4"/>
+
+          <rect x="90" y="96" width="220" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="200" y="124" text-anchor="middle" class="diagram-label" font-size="13">api: Api^</text>
+
+          <polyline points="200,142 200,176" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrow3)"/>
+
+          <rect x="90" y="180" width="220" height="46" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.6"/>
+          <text x="200" y="208" text-anchor="middle" class="diagram-label" font-size="13">orchestrate(api, verify)</text>
+          <text x="200" y="250" text-anchor="middle" fill="var(--safe)" font-size="12">✓ compiles — only orchestrate touches api</text>
+
+          <rect x="560" y="70" width="280" height="56" rx="3" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.6"/>
+          <text x="700" y="94" text-anchor="middle" class="diagram-label" font-size="13">String -&gt; Boolean</text>
+          <text x="700" y="112" text-anchor="middle" fill="var(--warn)" font-size="11">"just a verifier, no capability"</text>
+
+          <polyline points="310,119 470,106" fill="none" stroke="var(--warn)" stroke-width="1.4" stroke-dasharray="4 3"/>
+          <text x="390" y="98" text-anchor="middle" fill="var(--warn)" class="diagram-label" font-size="11">api smuggled into verify?</text>
+          <line x1="463" y1="99" x2="477" y2="113" stroke="var(--warn)" stroke-width="2"/>
+          <line x1="463" y1="113" x2="477" y2="99" stroke="var(--warn)" stroke-width="2"/>
+
+          <g class="diagram-label" font-size="12" fill="var(--warn)">
+            <text x="562" y="152">"this verifier still needs api"</text>
+            <text x="562" y="170">"but you said it needs nothing"</text>
+            <text x="562" y="194">→ rejected. the verifying agent</text>
+            <text x="562" y="210">   never touches a real Api.</text>
+          </g>
+        </g>
+      </svg>
+      <figcaption>Inside the scope, <code class="term">api</code> stays with the one function meant to hold it. The
+        moment a verifying agent claims to need nothing while still quietly calling the API itself, the compiler
+        catches the mismatch and refuses to compile — separation of duties enforced at the type level.</figcaption>
+    </figure>
+
+    <div class="code-panel">
+      <div class="cmd">scala-cli compile api_bad.scala</div>
+<pre>def compromisedVerifier(api: Api^): String -&gt; Boolean =
+  (request: String) =&gt;
+    api.call(s"side-channel: $request")
+    true</pre>
+<pre class="err">error: ./api_bad.scala:18:3
+Found:    (request: String) -&gt;{api} Boolean
+Required: String -&gt; Boolean
+
+Note that capability `api` cannot flow into capture set {}.</pre>
+    </div>
+
+    <h3>One nuance worth being honest about</h3>
+    <p>
+      <span class="term">verify</span> and <span class="term">orchestrate</span> above are two functions inside one
+      compiled program — capture checking spans both because they're part of the same compile. If the two "agents"
+      are actually separate processes talking over a real API — one sending another a message, the way A2A-style
+      agent protocols work — that compile-time boundary doesn't cross the wire with them.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 900 280" role="img" aria-label="Comparison: in one compiled program, capture checking spans both the verify and orchestrate functions directly. Across two separate agent processes, there is no shared type system — each runs its own TACIT session, and a message from one is just untrusted content to the other, checked against that side's own capabilities.">
+        <defs>
+          <marker id="arrowNuance" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="11.5">
+          <!-- Panel A -->
+          <text x="30" y="30" class="diagram-label" font-size="10.5" fill="var(--muted)">ONE COMPILED PROGRAM</text>
+          <rect x="20" y="46" width="390" height="180" rx="4" fill="none" stroke="var(--line)" stroke-width="1.3" stroke-dasharray="6 4"/>
+
+          <rect x="50" y="100" width="140" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="120" y="122" text-anchor="middle" class="diagram-label" font-size="12">verify</text>
+          <text x="120" y="138" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--muted)">String -&gt; Boolean</text>
+
+          <polyline points="190,125 230,125" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrowNuance)"/>
+          <text x="210" y="114" text-anchor="middle" font-size="9.5" fill="var(--muted)">verdict</text>
+
+          <rect x="230" y="100" width="150" height="50" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="305" y="122" text-anchor="middle" class="diagram-label" font-size="12" fill="var(--safe)">orchestrate</text>
+          <text x="305" y="138" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--safe)">holds Api^</text>
+
+          <text x="215" y="190" text-anchor="middle" fill="var(--safe)" font-size="11">✓ compiler checks both —</text>
+          <text x="215" y="206" text-anchor="middle" fill="var(--safe)" font-size="11">one shared compile</text>
+
+          <!-- Panel B -->
+          <text x="470" y="30" class="diagram-label" font-size="10.5" fill="var(--muted)">TWO SEPARATE AGENT PROCESSES</text>
+
+          <text x="555" y="74" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--muted)">AGENT A — own TACIT</text>
+          <rect x="470" y="82" width="170" height="128" rx="4" fill="none" stroke="var(--line)" stroke-width="1.3" stroke-dasharray="6 4"/>
+          <rect x="490" y="112" width="130" height="44" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="555" y="132" text-anchor="middle" class="diagram-label" font-size="11">verify</text>
+          <text x="555" y="146" text-anchor="middle" class="diagram-label" font-size="9">no Api^, ever</text>
+          <text x="555" y="186" text-anchor="middle" fill="var(--muted)" font-size="9.5">checked locally</text>
+
+          <text x="785" y="74" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--muted)">AGENT B — own TACIT</text>
+          <rect x="700" y="82" width="170" height="128" rx="4" fill="none" stroke="var(--line)" stroke-width="1.3" stroke-dasharray="6 4"/>
+          <rect x="720" y="112" width="130" height="44" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="785" y="132" text-anchor="middle" class="diagram-label" font-size="11" fill="var(--safe)">orchestrate</text>
+          <text x="785" y="146" text-anchor="middle" class="diagram-label" font-size="9" fill="var(--safe)">holds Api^</text>
+          <text x="785" y="186" text-anchor="middle" fill="var(--muted)" font-size="9.5">checked locally</text>
+
+          <polyline points="640,134 700,134" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrowNuance)"/>
+          <text x="670" y="122" text-anchor="middle" font-size="9" fill="var(--muted)">message</text>
+
+          <text x="670" y="238" text-anchor="middle" fill="var(--muted)" font-size="11">no shared type system crosses the wire —</text>
+          <text x="670" y="254" text-anchor="middle" fill="var(--muted)" font-size="11">a message is just data to whichever side receives it</text>
+        </g>
+      </svg>
+      <figcaption>Left: the example above, as it actually runs — one compile, one capture-checking boundary over
+        both functions. Right: if Agent A and Agent B are separate processes, there's no boundary spanning them —
+        each runs its own TACIT session, and a message from A is just untrusted content to B, checked against B's
+        own capabilities no matter what A asked for.</figcaption>
+    </figure>
+  </div>
+
+  <!-- SECTION 6 — INSIDE TACIT -->
+  <div class="section">
+    <div class="section-no">06 — Inside TACIT</div>
+    <h2>A tool gateway, not a sandboxed shell</h2>
+    <p>
+      Giving the agent a shell to compile and run its own Scala code would hand back everything Safe Scala was
+      meant to take away. TACIT, built by Martin Odersky's team at EPFL, solves this by being the only tool the
+      agent ever gets: one call, <span class="term">evaluateScala</span>, that compiles and interprets Scala code
+      on the agent's behalf. Every action the model takes has to be valid Safe Scala, or it's rejected before it
+      runs.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 900 320" role="img" aria-label="An agent harness calls TACIT's single evaluateScala tool. Inside TACIT, code passes through a code validator, then a compiler running in safe mode with capture and separation checking, then the capability library, with a REPL session holding state across agent turns. Only a result or a compiler error ever returns to the agent.">
+        <defs>
+          <marker id="arrowTacit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="12.5">
+          <rect x="20" y="140" width="140" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="90" y="163" text-anchor="middle" font-weight="600">Agent</text>
+          <text x="90" y="180" text-anchor="middle" font-size="10.5" fill="var(--muted)">Claude Code, OpenClaw…</text>
+
+          <polyline points="160,165 230,165" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrowTacit)"/>
+          <text x="195" y="150" text-anchor="middle" class="diagram-label" font-size="10.5" fill="var(--muted)">evaluateScala(code)</text>
+
+          <text x="240" y="48" class="diagram-label" font-size="11" fill="var(--muted)">TACIT — the agent's only tool</text>
+          <rect x="230" y="60" width="630" height="240" rx="4" fill="none" stroke="var(--line)" stroke-width="1.3" stroke-dasharray="6 4"/>
+
+          <rect x="260" y="140" width="150" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="335" y="160" text-anchor="middle" font-weight="600">Code validator</text>
+          <text x="335" y="177" text-anchor="middle" font-size="10.5" fill="var(--muted)">blocks java.io, sys.process</text>
+
+          <polyline points="410,165 440,165" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrowTacit)"/>
+
+          <rect x="440" y="140" width="190" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="535" y="160" text-anchor="middle" font-weight="600">Compiler — safe mode</text>
+          <text x="535" y="177" text-anchor="middle" font-size="10.5" fill="var(--muted)">capture + separation checking</text>
+
+          <polyline points="630,165 660,165" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrowTacit)"/>
+
+          <rect x="660" y="140" width="190" height="50" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.6"/>
+          <text x="755" y="160" text-anchor="middle" font-weight="600" fill="var(--safe)">Capability library</text>
+          <text x="755" y="177" text-anchor="middle" font-size="10.5" fill="var(--safe)">core API + plugins</text>
+
+          <rect x="440" y="220" width="190" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="535" y="240" text-anchor="middle" font-weight="600">REPL session</text>
+          <text x="535" y="257" text-anchor="middle" font-size="10.5" fill="var(--muted)">state across agent turns</text>
+
+          <line x1="535" y1="190" x2="535" y2="220" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrowTacit)" marker-start="url(#arrowTacit)"/>
+
+          <text x="755" y="285" text-anchor="middle" fill="var(--muted)" font-size="10.5">only a result — or a compiler error — ever reaches the agent</text>
+        </g>
+      </svg>
+      <figcaption>The code validator is defense in depth — a fast pre-check for obviously illegal imports — before
+        the compiler itself does the real work with capture and separation checking turned on.</figcaption>
+    </figure>
+
+    <p>
+      TACIT also splits inference across two model endpoints: a public model plans and writes the Scala code, and a
+      separate, smaller private model is the only one ever trusted with classified data directly — for example, to
+      summarize a confidential column without the public model seeing a single value in it.
+    </p>
+  </div>
+
+  <!-- SECTION 7 — WORKED EXAMPLE: ROLE-BASED ACCESS -->
+  <div class="section">
+    <div class="section-no">07 — Worked example, 1 of 2</div>
+    <h2>Same codebase, three roles, three different capability sets</h2>
+    <p>
+      Before any one company's specifics, the simplest version of this is just: different roles should be able to
+      do different things, and the compiler — not a config file someone forgot to update — should be what stops
+      them from doing more. Three roles hitting the same TACIT-gated system end up with three different
+      capability sets, carried entirely in their types.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 740 350" role="img" aria-label="One TACIT gateway serving three roles. Analyst and developer each hold their consequential capability directly and act on it. Data scientist can only train a candidate model; publishing it is never granted directly, only escalated to a human reviewer.">
+        <defs>
+          <marker id="arrowRole" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="11">
+          <rect x="280" y="20" width="180" height="44" rx="4" fill="none" stroke="var(--line)" stroke-width="1.4"/>
+          <text x="370" y="38" text-anchor="middle" font-weight="600" font-size="13">TACIT</text>
+          <text x="370" y="54" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--muted)">same compiler, same guarantee</text>
+
+          <polyline points="370,64 130,96" fill="none" stroke="var(--line-soft)" stroke-width="1.1" marker-end="url(#arrowRole)"/>
+          <polyline points="370,64 370,96" fill="none" stroke="var(--line-soft)" stroke-width="1.1" marker-end="url(#arrowRole)"/>
+          <polyline points="370,64 610,96" fill="none" stroke="var(--line-soft)" stroke-width="1.1" marker-end="url(#arrowRole)"/>
+
+          <!-- Column 0: Analyst -->
+          <rect x="35" y="96" width="190" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="130" y="119" text-anchor="middle" font-weight="600" font-size="12">Analyst</text>
+
+          <rect x="35" y="146" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="130" y="163" text-anchor="middle" class="diagram-label" font-size="10">Classified: revenue data</text>
+          <rect x="35" y="178" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="130" y="195" text-anchor="middle" class="diagram-label" font-size="10">QueryWarehouse^ (read)</text>
+
+          <rect x="35" y="222" width="190" height="44" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="130" y="248" text-anchor="middle" fill="var(--safe)" font-weight="600" font-size="11.5">run aggregate query</text>
+          <text x="130" y="286" text-anchor="middle" fill="var(--warn)" font-size="10.5">✗ no Deploy^ —</text>
+          <text x="130" y="300" text-anchor="middle" fill="var(--warn)" font-size="10.5">can't ship code</text>
+
+          <!-- Column 1: Developer -->
+          <rect x="275" y="96" width="190" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="370" y="119" text-anchor="middle" font-weight="600" font-size="12">Developer</text>
+
+          <rect x="275" y="146" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="370" y="163" text-anchor="middle" class="diagram-label" font-size="10">Deploy^</text>
+          <rect x="275" y="178" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="370" y="195" text-anchor="middle" class="diagram-label" font-size="10">CodeExec^ (sandboxed)</text>
+
+          <rect x="275" y="222" width="190" height="44" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="370" y="248" text-anchor="middle" fill="var(--safe)" font-weight="600" font-size="11.5">push to staging</text>
+          <text x="370" y="286" text-anchor="middle" fill="var(--warn)" font-size="10.5">✗ no Dataset^ —</text>
+          <text x="370" y="300" text-anchor="middle" fill="var(--warn)" font-size="10.5">can't read customer rows</text>
+
+          <!-- Column 2: Data Scientist -->
+          <rect x="515" y="96" width="190" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="610" y="119" text-anchor="middle" font-weight="600" font-size="12">Data scientist</text>
+
+          <rect x="515" y="146" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="610" y="163" text-anchor="middle" class="diagram-label" font-size="10">Dataset^ (training)</text>
+          <rect x="515" y="178" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="610" y="195" text-anchor="middle" class="diagram-label" font-size="10">ModelRegistry^</text>
+
+          <rect x="515" y="222" width="190" height="36" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.3"/>
+          <text x="610" y="245" text-anchor="middle" fill="var(--safe)" font-weight="600" font-size="11">train candidate model</text>
+
+          <polyline points="610,258 610,276" fill="none" stroke="var(--warn)" stroke-width="1.3" marker-end="url(#arrowRole)"/>
+          <text x="624" y="270" fill="var(--warn)" font-size="9.5" class="diagram-label">escalate</text>
+
+          <rect x="515" y="276" width="190" height="44" rx="3" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.5"/>
+          <text x="610" y="296" text-anchor="middle" fill="var(--warn)" font-weight="600" font-size="11">PublishModel^</text>
+          <text x="610" y="311" text-anchor="middle" fill="var(--warn)" font-size="10">needs reviewer sign-off</text>
+        </g>
+      </svg>
+      <figcaption>Same TACIT gateway, same compile-time guarantee, three different grants — no plugin recompile
+        needed to change them. Analyst and developer each hold their consequential capability directly, because
+        the blast radius is bounded. The data scientist can only ever train — <code class="term">PublishModel^</code>
+        is never granted to the role at all, only to the reviewer it escalates to.</figcaption>
+    </figure>
+
+    <p>
+      The same separation that keeps a verifying agent from touching an API capability also stops a "role-agnostic"
+      helper function from smuggling out a capability that belongs to someone else's role. A developer writes a
+      shared formatter meant to be safe for any role to call — declared pure — but its body still reaches for the
+      data-scientist-only <span class="term">Dataset</span> capability:
+    </p>
+
+    <div class="code-panel">
+      <div class="cmd">scala-cli compile role_bad.scala</div>
+<pre>def summarize(dataset: Dataset^): String -&gt; String =
+  (label: String) =&gt; s"$label: ${dataset.readRow(0)}"</pre>
+<pre class="err">error: ./role_bad.scala:16:3
+Found:    (label: String) -&gt;{dataset} String
+Required: String -&gt; String
+
+Note that capability `dataset` cannot flow into capture set {}.</pre>
+    </div>
+  </div>
+
+  <!-- SECTION 8 — WORKED EXAMPLE: A BANK -->
+  <div class="section">
+    <div class="section-no">08 — Worked example, 2 of 2</div>
+    <h2>Four agents, one bank, four different capability grants</h2>
+    <p>
+      Almost every agent inside a bank sits in the lethal trifecta by default: customer PII or positions
+      (private data), inbound messages, documents, or market feeds (untrusted content), and tools that move money
+      or change accounts (real-world effects). What actually differs from agent to agent isn't the trifecta — it's
+      which capabilities TACIT's plugin subsystem grants each one, and which consequential action still requires a
+      human to escalate.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 920 350" role="img" aria-label="One TACIT gateway serving four bank agents. Customer service and fraud monitoring hold their consequential capability directly — SendEmail and FreezeAccount — and act on it. Loan underwriting and treasury trading can only draft a recommendation; the capability that actually approves a loan or executes a trade is never granted to the agent, only escalated to a human.">
+        <defs>
+          <marker id="arrowBank" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g class="diagram-text" fill="currentColor" font-size="11">
+          <rect x="360" y="20" width="200" height="44" rx="4" fill="none" stroke="var(--line)" stroke-width="1.4"/>
+          <text x="460" y="38" text-anchor="middle" font-weight="600" font-size="13">TACIT</text>
+          <text x="460" y="54" text-anchor="middle" class="diagram-label" font-size="9.5" fill="var(--muted)">same compiler, same guarantee</text>
+
+          <polyline points="460,64 130,96" fill="none" stroke="var(--line-soft)" stroke-width="1.1" marker-end="url(#arrowBank)"/>
+          <polyline points="460,64 350,96" fill="none" stroke="var(--line-soft)" stroke-width="1.1" marker-end="url(#arrowBank)"/>
+          <polyline points="460,64 570,96" fill="none" stroke="var(--line-soft)" stroke-width="1.1" marker-end="url(#arrowBank)"/>
+          <polyline points="460,64 785,96" fill="none" stroke="var(--line-soft)" stroke-width="1.1" marker-end="url(#arrowBank)"/>
+
+          <!-- Column 0: Customer Service -->
+          <rect x="35" y="96" width="190" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="130" y="119" text-anchor="middle" font-weight="600" font-size="12">Customer service</text>
+
+          <rect x="35" y="146" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="130" y="163" text-anchor="middle" class="diagram-label" font-size="10">Classified: balance, SSN</text>
+          <rect x="35" y="178" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="130" y="195" text-anchor="middle" class="diagram-label" font-size="10">SendEmail^</text>
+
+          <rect x="35" y="222" width="190" height="44" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="130" y="248" text-anchor="middle" fill="var(--safe)" font-weight="600" font-size="11.5">reply to customer</text>
+          <text x="130" y="286" text-anchor="middle" fill="var(--warn)" font-size="10.5">✗ no Payments^ —</text>
+          <text x="130" y="300" text-anchor="middle" fill="var(--warn)" font-size="10.5">can't issue refunds</text>
+
+          <!-- Column 1: Fraud Monitoring -->
+          <rect x="255" y="96" width="190" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="350" y="119" text-anchor="middle" font-weight="600" font-size="12">Fraud monitoring</text>
+
+          <rect x="255" y="146" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="350" y="163" text-anchor="middle" class="diagram-label" font-size="10">TransactionHistory^</text>
+          <rect x="255" y="178" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="350" y="195" text-anchor="middle" class="diagram-label" font-size="10">FreezeAccount^</text>
+
+          <rect x="255" y="222" width="190" height="44" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.5"/>
+          <text x="350" y="248" text-anchor="middle" fill="var(--safe)" font-weight="600" font-size="11.5">freeze flagged account</text>
+          <text x="350" y="286" text-anchor="middle" fill="var(--muted)" font-size="10.5">scoring predicate</text>
+          <text x="350" y="300" text-anchor="middle" fill="var(--muted)" font-size="10.5">must stay pure</text>
+
+          <!-- Column 2: Loan Underwriting -->
+          <rect x="475" y="96" width="190" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="570" y="119" text-anchor="middle" font-weight="600" font-size="12">Loan underwriting</text>
+
+          <rect x="475" y="146" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="570" y="163" text-anchor="middle" class="diagram-label" font-size="10">Classified: financials</text>
+          <rect x="475" y="178" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="570" y="195" text-anchor="middle" class="diagram-label" font-size="10">ReadDocuments^</text>
+
+          <rect x="475" y="222" width="190" height="36" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.3"/>
+          <text x="570" y="245" text-anchor="middle" fill="var(--safe)" font-weight="600" font-size="11">draft recommendation</text>
+
+          <polyline points="570,258 570,276" fill="none" stroke="var(--warn)" stroke-width="1.3" marker-end="url(#arrowBank)"/>
+          <text x="584" y="270" fill="var(--warn)" font-size="9.5" class="diagram-label">escalate</text>
+
+          <rect x="475" y="276" width="190" height="44" rx="3" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.5"/>
+          <text x="570" y="296" text-anchor="middle" fill="var(--warn)" font-weight="600" font-size="11">ApproveLoan^</text>
+          <text x="570" y="311" text-anchor="middle" fill="var(--warn)" font-size="10">needs officer co-sign</text>
+
+          <!-- Column 3: Treasury Trading -->
+          <rect x="690" y="96" width="190" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <text x="785" y="119" text-anchor="middle" font-weight="600" font-size="12">Treasury trading</text>
+
+          <rect x="690" y="146" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="785" y="163" text-anchor="middle" class="diagram-label" font-size="10">Positions^ (Classified)</text>
+          <rect x="690" y="178" width="190" height="26" rx="13" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="785" y="195" text-anchor="middle" class="diagram-label" font-size="10">MarketFeed^ (read-only)</text>
+
+          <rect x="690" y="222" width="190" height="36" rx="3" fill="var(--safe-soft)" stroke="var(--safe)" stroke-width="1.3"/>
+          <text x="785" y="245" text-anchor="middle" fill="var(--safe)" font-weight="600" font-size="11">draft trade proposal</text>
+
+          <polyline points="785,258 785,276" fill="none" stroke="var(--warn)" stroke-width="1.3" marker-end="url(#arrowBank)"/>
+          <text x="799" y="270" fill="var(--warn)" font-size="9.5" class="diagram-label">escalate</text>
+
+          <rect x="690" y="276" width="190" height="44" rx="3" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.5"/>
+          <text x="785" y="296" text-anchor="middle" fill="var(--warn)" font-weight="600" font-size="11">ExecuteTrade^</text>
+          <text x="785" y="311" text-anchor="middle" fill="var(--warn)" font-size="10">per-trade approval</text>
+        </g>
+      </svg>
+      <figcaption>Same TACIT gateway underneath all four columns, same compile-time guarantee. Customer service and
+        fraud monitoring hold their consequential capability directly, because the blast radius is bounded. Loan
+        underwriting and treasury trading can only ever draft — <code class="term">ApproveLoan^</code> and
+        <code class="term">ExecuteTrade^</code> are never granted to the agent at all, only to the human it
+        escalates to.</figcaption>
+    </figure>
+
+    <p style="margin-top: 6px;">
+      The spreadsheet plugin below is the same idea one level down, at the code the plugin author actually writes:
+      what a capability parameter looks like, and what happens when an agent tries to route around one.
+    </p>
+  </div>
+
+  <!-- SECTION 9 — BUILDING A PLUGIN -->
+  <div class="section">
+    <div class="section-no">09 — Building a plugin</div>
+    <h2>A spreadsheet, from both sides</h2>
+    <p>
+      TACIT's capability library ships a core API (files, processes, network) plus a plugin subsystem for
+      domain-specific capabilities. Jakub's example plugin loads a payroll spreadsheet: <code class="term">loadSheet</code>
+      requires the <code class="term">FileSystem</code> capability, so the agent can't call it without being granted
+      one; confidential columns like salary come back as <code class="term">Classified</code>, visible in shape but
+      not in value; and any predicate passed in — say, "count rows where salary exceeds X" — has to be a
+      <em>pure</em> function, so it can't capture a capability or call <code class="term">println</code> to leak a
+      value sideways.
+    </p>
+
+    <div class="code-panel paraphrase">
+      <div class="src-label">What the agent sees — paraphrased from the talk's live demo</div>
+<pre>&gt; spreadsheet.column("salary")
+Classified(***, ***, ***, ...)
+
+&gt; spreadsheet.column("department")
+["Engineering", "Sales", "Legal", ...]
+
+&gt; spreadsheet.countWhere(row =&gt; { println(row.salary); row.salary &gt; 100000 })</pre>
+<pre class="err">error: predicate must be a pure function
+found a capturing closure (println is a side effect)</pre>
+    </div>
+    <p style="margin-top: 10px;">
+      Every intermediate result prints back to the agent in its REPL session, including the redacted
+      <code class="term">Classified(***)</code> values — the agent can see its own transformations working without
+      ever seeing what it's transforming.
+    </p>
+  </div>
+
+  <!-- SECTION 10 — CAPYBARACLAW -->
+  <div class="section">
+    <div class="section-no">10 — CapybaraClaw, the product</div>
+    <h2>The features any always-on agent needs on top</h2>
+    <p>
+      TACIT provides the safety guarantee; CapybaraClaw is the permanent, always-on harness built around it —
+      exposing TACIT as the sole tool provider to whatever model is running.
+    </p>
+    <div class="stepper">
+      <div class="step">
+        <div class="step-rail"><div class="step-dot">1</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <div class="step-title">Scoped memory</div>
+          <div class="step-desc">Three scopes: private per-user memory, memory tied to a Slack channel, and a
+            read-only public scope only admins can edit.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-rail"><div class="step-dot">2</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <div class="step-title">Conversation history search</div>
+          <div class="step-desc">Scoped the same way as memory, so the agent can reuse past solutions without
+            leaking across different permission boundaries.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-rail"><div class="step-dot">3</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <div class="step-title">Role-based access control</div>
+          <div class="step-desc">Defines who can do what, where — without recompiling plugins — and skips
+            inference calls that would fail a permission check anyway.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-rail"><div class="step-dot">4</div></div>
+        <div class="step-body">
+          <div class="step-title">Permission escalation</div>
+          <div class="step-desc">When the agent lacks a permission it needs, it can ask the user for it directly,
+            in whatever channel they're already using.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 11 — THE LIVE DEMO -->
+  <div class="section">
+    <div class="section-no">11 — The live demo</div>
+    <h2>Acme Incorporated, and a crowd of impostors</h2>
+    <p>
+      The demo ran CapybaraClaw as a Slack-based safety assistant for a fictional company, "Acme Incorporated."
+      One staged employee, "Jake Sullivan," tried to pull confidential financial and payroll data — and was
+      rejected on every attempt. The audience was then handed elevated, close-to-admin CapybaraClaw permissions and
+      invited to red-team it live, trying to extract the same payroll and funding data themselves.
+    </p>
+    <div class="field-note">
+      <span class="tag">Honest about the rough edges</span>
+      The live run wasn't flawless — one path crashed ("we didn't implement the update flow yet"), and at least one
+      instance was switched to a DeepSeek model partway through for speed. The speakers were upfront about both
+      in the room.
+    </div>
+  </div>
+
+  <!-- SECTION 12 — WHY IT MATTERS -->
+  <div class="section">
+    <div class="section-no">12 — Why it's interesting</div>
+    <h2>A language feature standing in for a container</h2>
+    <p>
+      Most agent-safety stories are about infrastructure: containers, permission prompts, network policies. This
+      one asks a programming language to carry the guarantee instead, and backs it with a live CTF where the
+      audience was invited to try to break it. The speakers were explicit about the condition that claim rests on:
+    </p>
+    <blockquote>
+      "If you encode the domain rules — things that can never be broken in Safe Scala — provided the plugin doesn't
+      have any holes, and we fix all the issues we find in the compiler, nothing can go wrong. Anywhere you want to
+      use AI in an untrusted context, that's where you can use it."
+      <cite>— closing claim from the talk; the "provided" clause is theirs, not a hedge we've added</cite>
+    </blockquote>
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--warn)"></span>limits capability, safety, or where an approach falls short</span>
+    <span><span class="swatch" style="background:var(--safe)"></span>TACIT / Safe Scala's claimed outcome</span>
+    <span><span class="swatch" style="background:var(--line)"></span>structural / neutral</span>
+  </div>
+
+  <div class="note">
+    <strong>Source:</strong> built from the talk's live transcript. A couple of system names (notably one
+    data-flow-tracking tool early in section 02) were unclear in the audio and are reproduced as best as they could
+    be made out. The GitHub repo (<code>lampepfl/capybaraclaw</code>) is the place to check anything here against
+    the actual code.
+  </div>
+
+</div>
